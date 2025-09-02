@@ -27,4 +27,5 @@ export interface ChatMessage {
   senderName: string;
   message: string;
   timestamp: Date;
+  reactions?: { [emoji: string]: string[] };
 }

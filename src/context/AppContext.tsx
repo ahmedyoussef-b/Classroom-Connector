@@ -18,7 +18,8 @@ interface AppContextType {
   setStudentCareer: (studentId: string, careerId: string | null) => void;
   togglePunishment: (studentId: string) => void;
   messages: ChatMessage[];
-  sendMessage: (message: Omit<ChatMessage, 'id' | 'timestamp'>) => void;
+  sendMessage: (message: Omit<ChatMessage, 'id' | 'timestamp' | 'reactions'>) => void;
+  toggleReaction: (messageId: string, emoji: string, userId: string) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -34,6 +35,7 @@ const initialMessages: ChatMessage[] = [
     senderName: 'Professeur',
     message: 'Bienvenue dans la classe, tout le monde! Commençons notre leçon.',
     timestamp: new Date(Date.now() - 1000 * 60 * 5),
+    reactions: { '👍': ['1', '2'] },
   },
 ];
 
@@ -63,13 +65,35 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     });
   }, []);
 
-  const sendMessage = useCallback((message: Omit<ChatMessage, 'id' | 'timestamp'>) => {
+  const sendMessage = useCallback((message: Omit<ChatMessage, 'id' | 'timestamp' | 'reactions'>) => {
     const newMessage: ChatMessage = {
       ...message,
       id: `msg-${Date.now()}`,
       timestamp: new Date(),
+      reactions: {},
     };
     setMessages(prevMessages => [...prevMessages, newMessage]);
+  }, []);
+
+  const toggleReaction = useCallback((messageId: string, emoji: string, userId: string) => {
+    setMessages(prevMessages => 
+      prevMessages.map(msg => {
+        if (msg.id === messageId) {
+          const newReactions = { ...(msg.reactions || {}) };
+          const users = newReactions[emoji] || [];
+          if (users.includes(userId)) {
+            newReactions[emoji] = users.filter(u => u !== userId);
+            if(newReactions[emoji].length === 0) {
+              delete newReactions[emoji];
+            }
+          } else {
+            newReactions[emoji] = [...users, userId];
+          }
+          return { ...msg, reactions: newReactions };
+        }
+        return msg;
+      })
+    );
   }, []);
 
   const value = {
@@ -80,6 +104,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     togglePunishment,
     messages,
     sendMessage,
+    toggleReaction,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
