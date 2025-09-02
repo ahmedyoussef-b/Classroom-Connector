@@ -32,23 +32,17 @@ export default function StudentPage() {
 
   const content = (
     <div className="w-full max-w-5xl mx-auto p-4 md:p-8">
-      <Card className="bg-card/80 backdrop-blur-sm border-card-foreground/20">
-        <CardHeader>
-          <CardTitle className="text-4xl font-bold">Bienvenue, {student.name}!</CardTitle>
-          {!isPunished && career && (
-             <CardDescription className="text-lg">Vous explorez le monde d'un(e) {career.name}.</CardDescription>
-          )}
-           {!isPunished && !career && (
-             <CardDescription className="text-lg">Votre professeur vous assignera bientôt un métier à explorer!</CardDescription>
-          )}
-          {isPunished && (
-             <CardDescription className="text-lg text-destructive">Vous êtes en retenue. Votre vue personnalisée a été désactivée.</CardDescription>
-          )}
-        </CardHeader>
-        <CardContent>
-          <PersonalizedContent student={student} />
-        </CardContent>
-      </Card>
+        <div className="bg-card/80 backdrop-blur-sm border border-card-foreground/20 rounded-xl shadow-2xl">
+            <div className="p-6 md:p-8">
+                <CardHeader className="p-0 mb-4">
+                    <CardTitle className="text-4xl font-bold">Bienvenue, {student.name}!</CardTitle>
+                    {career && (
+                        <CardDescription className="text-lg pt-2">Vous explorez le monde d'un(e) {career.name}.</CardDescription>
+                    )}
+                </CardHeader>
+                <PersonalizedContent student={student} />
+            </div>
+        </div>
     </div>
   );
   
@@ -65,7 +59,7 @@ export default function StudentPage() {
        <Smile className="w-24 h-24 text-primary mb-4" />
         <h2 className="text-3xl font-bold">Prêt à explorer?</h2>
         <p className="text-muted-foreground mt-2">Votre professeur vous assignera bientôt un thème de carrière à explorer.</p>
-        <div className="mt-8 w-full max-w-2xl">
+        <div className="mt-8 w-full max-w-2xl bg-card/80 backdrop-blur-sm border border-card-foreground/20 rounded-xl shadow-lg p-6">
           <PersonalizedContent student={student} />
         </div>
     </div>

@@ -36,11 +36,11 @@ export function PersonalizedContent({ student }: PersonalizedContentProps) {
   };
 
   return (
-    <div className="mt-6 border-t pt-6">
+    <div className="border-t border-foreground/20 pt-6">
       <h3 className="text-2xl font-semibold mb-4">Votre parcours personnalisé</h3>
       
       {!content && !loading && (
-        <div className="text-center p-8 border-dashed border-2 rounded-lg">
+        <div className="text-center p-8 border-dashed border-2 border-foreground/20 rounded-lg">
           <p className="text-muted-foreground mb-4">
             Découvrez à quoi pourrait ressembler votre avenir en tant que {student.ambition}!
           </p>
@@ -66,7 +66,7 @@ export function PersonalizedContent({ student }: PersonalizedContentProps) {
       )}
 
       {content && (
-        <div className="prose prose-blue dark:prose-invert max-w-none p-4 bg-muted/50 rounded-lg">
+        <div className="prose prose-blue dark:prose-invert max-w-none p-4 bg-background/50 rounded-lg">
           <pre className="whitespace-pre-wrap font-sans text-sm">{content}</pre>
         </div>
       )}
