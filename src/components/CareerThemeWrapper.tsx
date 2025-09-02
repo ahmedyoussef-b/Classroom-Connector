@@ -12,10 +12,14 @@ export function CareerThemeWrapper({ career, children }: CareerThemeWrapperProps
   const themeStyles: React.CSSProperties = career
     ? {
         '--custom-bg-image': career.theme.backgroundImage,
-        '--custom-text-color': `var(--${career.theme.textColor})`, // This assumes you have colors like text-slate-800 defined. It's better to use classes.
+        '--primary-hsl': career.theme.primaryColor,
+        '--accent-hsl': career.theme.accentColor,
         cursor: career.theme.cursor.replace('cursor-', ''),
       }
-    : {};
+    : {
+        '--primary-hsl': '207 90% 54%',
+        '--accent-hsl': '36 100% 65%',
+      };
 
   const themeClasses = career 
     ? `bg-gradient-to-br ${career.theme.backgroundColor} ${career.theme.textColor}`

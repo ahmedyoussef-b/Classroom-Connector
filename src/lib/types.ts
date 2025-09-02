@@ -8,6 +8,7 @@ export interface Career {
     backgroundColor: string;
     backgroundImage: string;
     primaryColor: string;
+    accentColor: string;
     textColor: string;
     icon: LucideIcon;
     cursor: string;
