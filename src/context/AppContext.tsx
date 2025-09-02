@@ -3,6 +3,8 @@
 import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
 import type { Student, Career, ChatMessage } from '@/lib/types';
 import { STUDENTS, CAREERS } from '@/lib/data';
+import { fr } from 'date-fns/locale';
+import { format } from 'date-fns';
 
 interface StudentState {
   careerId: string | null;
@@ -29,8 +31,8 @@ const initialMessages: ChatMessage[] = [
   {
     id: 'msg-1',
     senderId: 'teacher',
-    senderName: 'Teacher',
-    message: 'Welcome to the classroom, everyone! Let\'s start our lesson.',
+    senderName: 'Professeur',
+    message: 'Bienvenue dans la classe, tout le monde! Commençons notre leçon.',
     timestamp: new Date(Date.now() - 1000 * 60 * 5),
   },
 ];

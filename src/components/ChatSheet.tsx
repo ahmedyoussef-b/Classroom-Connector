@@ -27,7 +27,7 @@ export function ChatSheet() {
     if (newMessage.trim()) {
       sendMessage({
         senderId: 'teacher',
-        senderName: 'Teacher',
+        senderName: 'Professeur',
         message: newMessage.trim(),
       });
       setNewMessage('');
@@ -38,14 +38,14 @@ export function ChatSheet() {
     <Sheet>
       <SheetTrigger asChild>
         <Button>
-          <MessageCircle className="mr-2 h-4 w-4" /> Open Chat
+          <MessageCircle className="mr-2 h-4 w-4" /> Ouvrir le Chat
         </Button>
       </SheetTrigger>
       <SheetContent className="flex flex-col w-full sm:max-w-lg">
         <SheetHeader>
-          <SheetTitle>Classroom Chat</SheetTitle>
+          <SheetTitle>Chat de la classe</SheetTitle>
           <SheetDescription>
-            Real-time discussion with your students.
+            Discussion en temps réel avec vos élèves.
           </SheetDescription>
         </SheetHeader>
         <div className="flex-1 flex flex-col overflow-hidden">
@@ -68,7 +68,7 @@ export function ChatSheet() {
                     </div>
                      {isTeacher && (
                       <Avatar className="h-8 w-8">
-                        <AvatarFallback>T</AvatarFallback>
+                        <AvatarFallback>P</AvatarFallback>
                       </Avatar>
                     )}
                   </div>
@@ -80,7 +80,7 @@ export function ChatSheet() {
             <Input
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
-              placeholder="Type a message..."
+              placeholder="Écrivez un message..."
               autoComplete="off"
             />
             <Button type="submit" size="icon" aria-label="Send message">

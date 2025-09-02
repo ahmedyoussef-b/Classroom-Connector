@@ -28,7 +28,7 @@ export function PersonalizedContent({ student }: PersonalizedContentProps) {
       });
       setContent(result.personalizedContent);
     } catch (e) {
-      setError('Failed to generate content. Please try again.');
+      setError('Impossible de générer le contenu. Veuillez réessayer.');
       console.error(e);
     } finally {
       setLoading(false);
@@ -37,16 +37,16 @@ export function PersonalizedContent({ student }: PersonalizedContentProps) {
 
   return (
     <div className="mt-6 border-t pt-6">
-      <h3 className="text-2xl font-semibold mb-4">Your Personalized Path</h3>
+      <h3 className="text-2xl font-semibold mb-4">Votre parcours personnalisé</h3>
       
       {!content && !loading && (
         <div className="text-center p-8 border-dashed border-2 rounded-lg">
           <p className="text-muted-foreground mb-4">
-            See what your future as a {student.ambition} could look like!
+            Découvrez à quoi pourrait ressembler votre avenir en tant que {student.ambition}!
           </p>
           <Button onClick={generateContent}>
             <Sparkles className="mr-2 h-4 w-4" />
-            Generate My Learning Plan
+            Générer mon plan d'apprentissage
           </Button>
         </div>
       )}
@@ -54,13 +54,13 @@ export function PersonalizedContent({ student }: PersonalizedContentProps) {
       {loading && (
         <div className="flex items-center justify-center p-8">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="ml-4 text-muted-foreground">Generating your personalized plan...</p>
+          <p className="ml-4 text-muted-foreground">Génération de votre plan personnalisé...</p>
         </div>
       )}
 
       {error && (
         <Alert variant="destructive">
-          <AlertTitle>Error</AlertTitle>
+          <AlertTitle>Erreur</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}

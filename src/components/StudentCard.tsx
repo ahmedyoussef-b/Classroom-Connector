@@ -42,14 +42,14 @@ export function StudentCard({ student }: StudentCardProps) {
       <CardContent className="flex-grow space-y-4">
         <div>
           <label htmlFor={`career-select-${student.id}`} className="text-sm font-medium text-muted-foreground">
-            Assigned Career
+            Métier assigné
           </label>
           <Select onValueChange={handleCareerChange} value={state?.careerId ?? 'none'}>
             <SelectTrigger id={`career-select-${student.id}`} className="w-full">
-              <SelectValue placeholder="Select a career..." />
+              <SelectValue placeholder="Sélectionnez un métier..." />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="none">None</SelectItem>
+              <SelectItem value="none">Aucun</SelectItem>
               {careers.map((career) => (
                 <SelectItem key={career.id} value={career.id}>
                   <div className="flex items-center gap-2">
@@ -64,7 +64,7 @@ export function StudentCard({ student }: StudentCardProps) {
          {currentCareer && (
           <div className="text-sm text-muted-foreground flex items-center gap-2 p-2 bg-muted rounded-md">
             <currentCareer.theme.icon className="h-4 w-4 text-primary" />
-            <span>Currently viewing the {currentCareer.name} theme.</span>
+            <span>Affiche actuellement le thème {currentCareer.name}.</span>
           </div>
         )}
       </CardContent>
@@ -79,7 +79,7 @@ export function StudentCard({ student }: StudentCardProps) {
           ) : (
             <CheckCircle className="mr-2 h-4 w-4" />
           )}
-          {state?.isPunished ? 'Remove Punishment' : 'Apply Punishment'}
+          {state?.isPunished ? 'Enlever la punition' : 'Appliquer une punition'}
         </Button>
       </CardFooter>
     </Card>

@@ -14,8 +14,8 @@ export default function TeacherPage() {
       <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Teacher Dashboard</h1>
-            <p className="text-muted-foreground">Manage your students and their learning journey.</p>
+            <h1 className="text-3xl font-bold tracking-tight">Tableau de bord du professeur</h1>
+            <p className="text-muted-foreground">Gérez vos élèves et leur parcours d'apprentissage.</p>
           </div>
           <ChatSheet />
         </div>
