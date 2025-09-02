@@ -5,8 +5,10 @@ import { useApp } from '@/context/AppContext';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Button } from './ui/button';
-import { Ban, CheckCircle, User } from 'lucide-react';
+import { Ban, CheckCircle } from 'lucide-react';
 import { Avatar, AvatarFallback } from './ui/avatar';
+import Link from 'next/link';
+import { cn } from '@/lib/utils';
 
 interface StudentCardProps {
   student: Student;
@@ -27,7 +29,10 @@ export function StudentCard({ student }: StudentCardProps) {
   const currentCareer = careers.find(c => c.id === state?.careerId);
 
   return (
-    <Card className="flex flex-col transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+    <Card className={cn(
+      "flex flex-col transition-all duration-300 hover:shadow-xl hover:-translate-y-1",
+      state?.isPunished && "bg-destructive/10 border-destructive"
+    )}>
       <CardHeader>
         <div className="flex items-center gap-4">
           <Avatar className="h-12 w-12">
@@ -44,7 +49,7 @@ export function StudentCard({ student }: StudentCardProps) {
           <label htmlFor={`career-select-${student.id}`} className="text-sm font-medium text-muted-foreground">
             Métier assigné
           </label>
-          <Select onValueChange={handleCareerChange} value={state?.careerId ?? 'none'}>
+          <Select onValueChange={handleCareerChange} value={state?.careerId ?? 'none'} disabled={state?.isPunished}>
             <SelectTrigger id={`career-select-${student.id}`} className="w-full">
               <SelectValue placeholder="Sélectionnez un métier..." />
             </SelectTrigger>
@@ -61,14 +66,14 @@ export function StudentCard({ student }: StudentCardProps) {
             </SelectContent>
           </Select>
         </div>
-         {currentCareer && (
+         {currentCareer && !state?.isPunished && (
           <div className="text-sm text-muted-foreground flex items-center gap-2 p-2 bg-muted rounded-md">
             <currentCareer.theme.icon className="h-4 w-4 text-primary" />
-            <span>Affiche actuellement le thème {currentCareer.name}.</span>
+            <span>Thème: {currentCareer.name}.</span>
           </div>
         )}
       </CardContent>
-      <CardFooter>
+      <CardFooter className="flex flex-col gap-2">
         <Button
           variant={state?.isPunished ? 'destructive' : 'outline'}
           onClick={handlePunish}
@@ -80,6 +85,9 @@ export function StudentCard({ student }: StudentCardProps) {
             <CheckCircle className="mr-2 h-4 w-4" />
           )}
           {state?.isPunished ? 'Enlever la punition' : 'Appliquer une punition'}
+        </Button>
+         <Button asChild className="w-full" variant="secondary">
+            <Link href={`/student/${student.id}`}>Voir la page de l'élève</Link>
         </Button>
       </CardFooter>
     </Card>
