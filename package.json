@@ -10,7 +10,7 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "db:seed": "npx prisma db seed"
+    "db:seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
     "@genkit-ai/googleai": "^1.14.1",

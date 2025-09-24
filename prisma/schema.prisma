@@ -13,29 +13,29 @@ datasource db {
 }
 
 model User {
-  id              String       @id @default(cuid())
-  email           String?      @unique
+  id              String     @id @default(cuid())
+  email           String?    @unique
   name            String?
-  role            Role         @default(ELEVE)
+  role            Role       @default(ELEVE)
   ambition        String?
-  classeEnseignee Classe[]     @relation("professeur")
-  classe          Classe?      @relation("eleves", fields: [classeId], references: [id])
+  classeEnseignee Classe[]   @relation("professeur")
+  classe          Classe?    @relation("eleves", fields: [classeId], references: [id])
   classeId        String?
   etat            EtatEleve?
   messages        Message[]
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
 }
 
 model Classe {
-  id           String    @id @default(cuid())
+  id           String   @id @default(cuid())
   nom          String
-  professeur   User?     @relation("professeur", fields: [professeurId], references: [id], onDelete: Restrict, onUpdate: Restrict)
-  professeurId String?   @unique
-  eleves       User[]    @relation("eleves")
-  chatroomId   String    @unique @default(cuid())
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  professeur   User?    @relation("professeur", fields: [professeurId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  professeurId String?  @unique
+  eleves       User[]   @relation("eleves")
+  chatroomId   String   @unique @default(cuid())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
 
 model EtatEleve {
@@ -56,21 +56,21 @@ model Metier {
 }
 
 model Message {
-  id          String     @id @default(cuid())
-  message     String
-  sender      User       @relation(fields: [senderId], references: [id])
-  senderId    String
-  senderName  String
-  chatroomId  String
-  reactions   Reaction[]
-  createdAt   DateTime   @default(now())
+  id         String     @id @default(cuid())
+  message    String
+  sender     User       @relation(fields: [senderId], references: [id])
+  senderId   String
+  senderName String
+  chatroomId String
+  reactions  Reaction[]
+  createdAt  DateTime   @default(now())
 }
 
 model Reaction {
-  id        String   @id @default(cuid())
+  id        String  @id @default(cuid())
   emoji     String
   userId    String // Not a relation, just storing the ID
-  message   Message  @relation(fields: [messageId], references: [id])
+  message   Message @relation(fields: [messageId], references: [id])
   messageId String
 }
 
