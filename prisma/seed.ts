@@ -1,3 +1,4 @@
+
 import { PrismaClient, Role } from '@prisma/client';
 
 const prisma = new PrismaClient();
@@ -9,16 +10,17 @@ async function main() {
   await prisma.reaction.deleteMany();
   await prisma.message.deleteMany();
   await prisma.etatEleve.deleteMany();
-  await prisma.metier.deleteMany();
   await prisma.user.deleteMany({ where: { role: 'ELEVE' }});
   await prisma.classe.deleteMany();
   await prisma.user.deleteMany({ where: { role: 'PROFESSEUR' }});
+  await prisma.metier.deleteMany();
 
 
   // Création du professeur
   const professeur = await prisma.user.create({
     data: {
       id: 'teacher-id',
+      email: 'professeur.dubois@example.com',
       name: 'Professeur Dubois',
       role: Role.PROFESSEUR,
       ambition: 'Guider la prochaine génération',
@@ -53,6 +55,7 @@ async function main() {
     await prisma.user.create({
       data: {
         id: eleveData.id,
+        email: `${eleveData.name.toLowerCase().replace(' ', '.')}@example.com`,
         name: eleveData.name,
         ambition: eleveData.ambition,
         role: Role.ELEVE,
@@ -159,3 +162,5 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
+
+    
