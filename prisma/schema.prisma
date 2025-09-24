@@ -1,14 +1,12 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-generator client {
-  provider        = "prisma-client-js"
-}
 
 datasource db {
   provider     = "postgres"
   url          = env("DATABASE_URL")
   directUrl    = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
 }
 
 model User {
@@ -17,73 +15,69 @@ model User {
   name            String?
   role            Role         @default(ELEVE)
   ambition        String?
-  classeEnseignee Classe[]     @relation("ProfesseurToClasse")
+  classeEnseignee Classe?      @relation("ProfesseurToClasse")
   classe          Classe?      @relation("EleveToClasse", fields: [classeId], references: [id])
   classeId        String?
-  messages        Message[]    @relation("AuteurToMessage")
-  etat            EtatEleve?   @relation("EleveToEtat")
-  reactions       Reaction[]   @relation("AuteurToReaction")
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  messages        Message[]    @relation("UserToMessage")
+  etat            EtatEleve?
+  reactions       Reaction[]   @relation("UserToReaction")
 }
 
 model Classe {
-  id              String       @id @default(cuid())
-  nom             String
-  professeur      User         @relation("ProfesseurToClasse", fields: [professeurId], references: [id])
-  professeurId    String
-  eleves          User[]       @relation("EleveToClasse")
-  chatroomId      String       @unique @default(cuid())
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  id           String    @id @default(cuid())
+  nom          String
+  professeur   User      @relation("ProfesseurToClasse", fields: [professeurId], references: [id])
+  professeurId String    @unique
+  eleves       User[]    @relation("EleveToClasse")
+  chatroomId   String    @unique @default(cuid())
+  chatroom     Chatroom  @relation(fields: [chatroomId], references: [id])
 }
 
 model Metier {
-  id              String       @id @default(cuid())
-  nom             String
-  description     String
-  theme           Json
-  etats           EtatEleve[]
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  id          String      @id @default(cuid())
+  nom         String
+  description String
+  theme       Json
+  etats       EtatEleve[]
 }
 
 model EtatEleve {
-  id              String       @id @default(cuid())
-  eleve           User         @relation("EleveToEtat", fields: [eleveId], references: [id])
-  eleveId         String       @unique
-  metier          Metier?      @relation(fields: [metierId], references: [id])
-  metierId        String?
-  isPunished      Boolean      @default(false)
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  id         String  @id @default(cuid())
+  eleve      User    @relation(fields: [eleveId], references: [id])
+  eleveId    String  @unique
+  metier     Metier? @relation(fields: [metierId], references: [id])
+  metierId   String?
+  isPunished Boolean @default(false)
+}
+
+model Chatroom {
+  id       String    @id @default(cuid())
+  classe   Classe?
+  messages Message[]
 }
 
 model Message {
-  id              String       @id @default(cuid())
-  message         String
-  senderId        String
-  senderName      String
-  chatroomId      String
-  auteur          User         @relation("AuteurToMessage", fields: [senderId], references: [id])
-  reactions       Reaction[]
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  id          String     @id @default(cuid())
+  message     String
+  createdAt   DateTime   @default(now())
+  sender      User       @relation("UserToMessage", fields: [senderId], references: [id])
+  senderId    String
+  senderName  String
+  chatroom    Chatroom   @relation(fields: [chatroomId], references: [id])
+  chatroomId  String
+  reactions   Reaction[]
 }
 
 model Reaction {
-  id              String       @id @default(cuid
-())
-  emoji           String
-  message         Message      @relation(fields: [messageId], references: [id])
-  messageId       String
-  auteur          User         @relation("AuteurToReaction", fields: [userId], references: [id])
-  userId          String
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  id        String   @id @default(cuid())
+  emoji     String
+  user      User     @relation("UserToReaction", fields: [userId], references: [id])
+  userId    String
+  message   Message  @relation(fields: [messageId], references: [id])
+  messageId String
 }
 
 enum Role {
-  ELEVE
   PROFESSEUR
+  ELEVE
 }
