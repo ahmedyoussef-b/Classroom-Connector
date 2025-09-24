@@ -3,7 +3,6 @@
 
 generator client {
   provider        = "prisma-client-js"
-  previewFeatures = ["driverAdapters"]
 }
 
 datasource db {
@@ -13,57 +12,64 @@ datasource db {
   relationMode = "prisma"
 }
 
+
 model User {
   id              String       @id @default(cuid())
+  email           String       @unique
   name            String?
-  email           String?      @unique
-  ambition        String?
   role            Role         @default(ELEVE)
-  etat            EtatEleve?   @relation(fields: [etatId], references: [id])
-  etatId          String?      @unique
-  // Un utilisateur peut être un professeur pour plusieurs classes
+  ambition        String?
   classeEnseignee Classe[]     @relation("professeur")
-  // Un élève appartient à une seule classe
   classe          Classe?      @relation("eleves", fields: [classeId], references: [id])
   classeId        String?
+  etat            EtatEleve?   @relation(fields: [id], references: [eleveId])
   messages        Message[]
   reactions       Reaction[]
+
+  @@index([classeId])
 }
 
 model Classe {
   id           String    @id @default(cuid())
   nom          String
   professeur   User?     @relation("professeur", fields: [professeurId], references: [id], onDelete: Restrict, onUpdate: Restrict)
-  professeurId String?   @unique
+  professeurId String?
   eleves       User[]    @relation("eleves")
   chatroomId   String    @unique @default(cuid())
+  
+  @@index([professeurId])
 }
 
 model Metier {
   id          String      @id @default(cuid())
   nom         String
   description String
-  theme       Json // Store theme-related data like colors, icons, etc.
+  theme       Json // { primaryColor, accentColor, backgroundColor, backgroundImage, textColor, cursor }
   etats       EtatEleve[]
 }
 
 model EtatEleve {
   id         String  @id @default(cuid())
-  eleve      User?
+  eleve      User    @relation(fields: [eleveId], references: [id])
+  eleveId    String  @unique
   metier     Metier? @relation(fields: [metierId], references: [id])
   metierId   String?
   isPunished Boolean @default(false)
+  
+  @@index([metierId])
 }
 
 model Message {
   id          String     @id @default(cuid())
   message     String
-  createdAt   DateTime   @default(now())
   sender      User       @relation(fields: [senderId], references: [id])
   senderId    String
   senderName  String
   chatroomId  String
+  createdAt   DateTime   @default(now())
   reactions   Reaction[]
+
+  @@index([senderId])
 }
 
 model Reaction {
@@ -73,7 +79,11 @@ model Reaction {
   userId    String
   message   Message  @relation(fields: [messageId], references: [id])
   messageId String
+  
+  @@index([userId])
+  @@index([messageId])
 }
+
 
 enum Role {
   ELEVE
