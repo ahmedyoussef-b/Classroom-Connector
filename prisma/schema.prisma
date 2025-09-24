@@ -8,7 +8,6 @@ generator client {
 datasource db {
   provider     = "postgresql"
   url          = env("DATABASE_URL")
-  relationMode = "prisma"
 }
 
 model User {
@@ -17,8 +16,8 @@ model User {
   name            String?
   role            Role       @default(ELEVE)
   ambition        String?
-  classeEnseignee Classe[]   @relation("professeur")
-  classe          Classe?    @relation("eleves", fields: [classeId], references: [id])
+  classeEnseignee Classe[]   @relation("Professeurs")
+  classe          Classe?    @relation("Eleves", fields: [classeId], references: [id])
   classeId        String?
   etat            EtatEleve?
   messages        Message[]
@@ -29,9 +28,9 @@ model User {
 model Classe {
   id           String   @id @default(cuid())
   nom          String
-  professeur   User?    @relation("professeur", fields: [professeurId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  professeur   User?    @relation("Professeurs", fields: [professeurId], references: [id])
   professeurId String?  @unique
-  eleves       User[]   @relation("eleves")
+  eleves       User[]   @relation("Eleves")
   chatroomId   String   @unique @default(cuid())
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -50,7 +49,7 @@ model Metier {
   id          String      @id @default(cuid())
   nom         String
   description String
-  theme       Json // JSON object for theme properties
+  theme       Json
   etats       EtatEleve[]
 }
 
@@ -66,10 +65,10 @@ model Message {
 }
 
 model Reaction {
-  id        String  @id @default(cuid())
+  id        String   @id @default(cuid())
   emoji     String
-  userId    String // Not a relation, just storing the ID
-  message   Message @relation(fields: [messageId], references: [id])
+  userId    String
+  message   Message  @relation(fields: [messageId], references: [id])
   messageId String
 }
 
