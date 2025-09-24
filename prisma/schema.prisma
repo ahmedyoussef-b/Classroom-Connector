@@ -1,6 +1,6 @@
 
 // This is your Prisma schema file,
-// learn more about it in the docs: https://pris.by/d/prisma-schema
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
   provider = "prisma-client-js"
@@ -8,7 +8,27 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  url = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  name          String?
+  role          Role
+  ambition      String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  classe        Classe?   @relation("ElevesDansClasse", fields: [classeId], references: [id])
+  classeId      String?
+
+  messages      Message[]
+  reactions     Reaction[]
+  
+  classesEnseignees Classe[] @relation("ProfesseurPourClasse")
+
+  etat          EtatEleve?
 }
 
 enum Role {
@@ -16,73 +36,65 @@ enum Role {
   PROFESSEUR
 }
 
-model User {
-  id        String    @id @default(cuid())
-  email     String    @unique
-  name      String?
-  role      Role      @default(ELEVE)
-  ambition  String?
-  classe    Classe?   @relation("ElevesDansClasse", fields: [classeId], references: [id])
-  classeId  String?
-  etat      EtatEleve?
-  messages  Message[]
-  reactions Reaction[]
-
-  classesEnseignees Classe[] @relation("ProfesseurPourClasse")
-}
-
 model Classe {
-  id            String   @id @default(c1uid())
+  id            String   @id @default(cuid())
   nom           String
+  
   professeur    User     @relation("ProfesseurPourClasse", fields: [professeurId], references: [id])
   professeurId  String
-  eleves        User[]   @relation("ElevesDansClasse")
-  chatroomId    String   @unique
-  chatroom      Chatroom @relation(fields: [chatroomId], references: [id])
-}
 
-model EtatEleve {
-  id         String  @id @default(cuid())
-  eleve      User    @relation(fields: [eleveId], references: [id])
-  eleveId    String  @unique
-  isPunished Boolean @default(false)
-  metier     Metier? @relation(fields: [metierId], references: [id])
-  metierId   String?
+  eleves        User[]   @relation("ElevesDansClasse")
+
+  chatroomId    String?  @unique
+  chatroom      Chatroom? @relation(fields: [chatroomId], references: [id])
 }
 
 model Metier {
-  id          String      @id @default(cuid())
-  nom         String
-  description String
-  theme       Json
-  etats       EtatEleve[]
+  id            String    @id @default(cuid())
+  nom           String
+  description   String
+  theme         Json
+  
+  etatsEleves   EtatEleve[]
+}
+
+model EtatEleve {
+  id          String    @id @default(cuid())
+  eleve       User      @relation(fields: [eleveId], references: [id])
+  eleveId     String    @unique
+  metier      Metier?   @relation(fields: [metierId], references: [id])
+  metierId    String?
+  isPunished  Boolean   @default(false)
 }
 
 model Chatroom {
-  id       String    @id @default(cuid())
-  classe   Classe?
-  messages Message[]
+  id        String    @id @default(cuid())
+  classe    Classe?
+  messages  Message[]
 }
 
 model Message {
   id          String     @id @default(cuid())
   message     String
-  createdAt   DateTime   @default(now())
   sender      User       @relation(fields: [senderId], references: [id])
   senderId    String
   senderName  String
+  createdAt   DateTime   @default(now())
+  
   chatroom    Chatroom   @relation(fields: [chatroomId], references: [id])
   chatroomId  String
+
   reactions   Reaction[]
 }
 
 model Reaction {
-  id        String  @id @default(cuid())
+  id        String   @id @default(cuid())
   emoji     String
-  user      User    @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
   userId    String
-  message   Message @relation(fields: [messageId], references: [id])
+  message   Message  @relation(fields: [messageId], references: [id])
   messageId String
+  createdAt DateTime @default(now())
 
-  @@unique([userId, messageId, emoji])
+  @@unique([emoji, userId, messageId])
 }
