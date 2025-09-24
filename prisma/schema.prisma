@@ -1,4 +1,3 @@
-
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
@@ -14,7 +13,6 @@ datasource db {
   relationMode = "prisma"
 }
 
-
 enum Role {
   PROFESSEUR
   ELEVE
@@ -29,54 +27,73 @@ model User {
   classeEnseignee Classe[]     @relation("professeur")
   classe          Classe?      @relation("eleves", fields: [classeId], references: [id])
   classeId        String?
-  messages        Message[]    @relation("auteur")
-  etat            EtatEleve?   @relation("eleve")
-  reactions       Reaction[]   @relation("auteur")
-}
+  messages        Message[]
+  etat            EtatEleve?
+  reactions       Reaction[]
 
+  @@index([classeId])
+}
 
 model Classe {
   id           String    @id @default(cuid())
   nom          String
-  professeur   User?     @relation("professeur", fields: [professeurId], references: [id])
+  professeur   User?     @relation("professeur", fields: [professeurId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   professeurId String?
   eleves       User[]    @relation("eleves")
   chatroomId   String    @unique @default(cuid())
+  chatroom     Chatroom? @relation(fields: [chatroomId], references: [id])
+
+  @@index([professeurId])
 }
 
 model Metier {
   id          String      @id @default(cuid())
   nom         String
   description String
-  theme       Json // { primaryColor, accentColor, backgroundColor, cursor, backgroundImage, textColor }
+  theme       Json
   etats       EtatEleve[]
 }
 
 model EtatEleve {
-  id        String  @id @default(cuid())
-  eleve     User    @relation("eleve", fields: [eleveId], references: [id])
-  eleveId   String  @unique
-  metier    Metier? @relation(fields: [metierId], references: [id])
-  metierId  String?
+  id         String  @id @default(cuid())
+  eleve      User    @relation(fields: [eleveId], references: [id])
+  eleveId    String  @unique
+  metier     Metier? @relation(fields: [metierId], references: [id])
+  metierId   String?
   isPunished Boolean @default(false)
+
+  @@index([metierId])
+}
+
+model Chatroom {
+  id       String    @id @default(cuid())
+  messages Message[]
+  classe   Classe?
 }
 
 model Message {
   id          String     @id @default(cuid())
   message     String
   createdAt   DateTime   @default(now())
-  sender      User       @relation("auteur", fields: [senderId], references: [id])
+  sender      User       @relation(fields: [senderId], references: [id])
   senderId    String
   senderName  String
+  chatroom    Chatroom   @relation(fields: [chatroomId], references: [id])
   chatroomId  String
   reactions   Reaction[]
+
+  @@index([senderId])
+  @@index([chatroomId])
 }
 
 model Reaction {
   id        String   @id @default(cuid())
   emoji     String
-  user      User     @relation("auteur", fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
   userId    String
   message   Message  @relation(fields: [messageId], references: [id])
   messageId String
+
+  @@index([userId])
+  @@index([messageId])
 }
