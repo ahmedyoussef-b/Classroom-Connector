@@ -2,7 +2,7 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider        = "prisma-client-js"
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -12,40 +12,30 @@ datasource db {
   relationMode = "prisma"
 }
 
-
 model User {
   id              String       @id @default(cuid())
-  email           String       @unique
+  email           String?      @unique
   name            String?
   role            Role         @default(ELEVE)
   ambition        String?
   classeEnseignee Classe[]     @relation("professeur")
   classe          Classe?      @relation("eleves", fields: [classeId], references: [id])
   classeId        String?
-  etat            EtatEleve?   @relation(fields: [id], references: [eleveId])
+  etat            EtatEleve?
   messages        Message[]
-  reactions       Reaction[]
-
-  @@index([classeId])
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
 }
 
 model Classe {
   id           String    @id @default(cuid())
   nom          String
   professeur   User?     @relation("professeur", fields: [professeurId], references: [id], onDelete: Restrict, onUpdate: Restrict)
-  professeurId String?
+  professeurId String?   @unique
   eleves       User[]    @relation("eleves")
   chatroomId   String    @unique @default(cuid())
-  
-  @@index([professeurId])
-}
-
-model Metier {
-  id          String      @id @default(cuid())
-  nom         String
-  description String
-  theme       Json // { primaryColor, accentColor, backgroundColor, backgroundImage, textColor, cursor }
-  etats       EtatEleve[]
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 }
 
 model EtatEleve {
@@ -55,8 +45,14 @@ model EtatEleve {
   metier     Metier? @relation(fields: [metierId], references: [id])
   metierId   String?
   isPunished Boolean @default(false)
-  
-  @@index([metierId])
+}
+
+model Metier {
+  id          String      @id @default(cuid())
+  nom         String
+  description String
+  theme       Json // JSON object for theme properties
+  etats       EtatEleve[]
 }
 
 model Message {
@@ -66,24 +62,17 @@ model Message {
   senderId    String
   senderName  String
   chatroomId  String
-  createdAt   DateTime   @default(now())
   reactions   Reaction[]
-
-  @@index([senderId])
+  createdAt   DateTime   @default(now())
 }
 
 model Reaction {
   id        String   @id @default(cuid())
   emoji     String
-  user      User     @relation(fields: [userId], references: [id])
-  userId    String
+  userId    String // Not a relation, just storing the ID
   message   Message  @relation(fields: [messageId], references: [id])
   messageId String
-  
-  @@index([userId])
-  @@index([messageId])
 }
-
 
 enum Role {
   ELEVE
