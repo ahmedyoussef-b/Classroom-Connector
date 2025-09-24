@@ -1,4 +1,10 @@
-// prisma/schema.prisma
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
 
 datasource db {
   provider     = "postgresql"
@@ -7,47 +13,42 @@ datasource db {
   relationMode = "prisma"
 }
 
-generator client {
-  provider = "prisma-client-js"
-}
-
 model User {
   id              String       @id @default(cuid())
   email           String       @unique
   name            String?
   role            Role
   ambition        String?
-  classeEnseignee Classe[]     @relation("professeur")
   classe          Classe?      @relation("eleves", fields: [classeId], references: [id])
-  classeId        String?      @map("classe_id")
+  classeId        String?
   etat            EtatEleve?
   messages        Message[]
   reactions       Reaction[]
+  classeEnseignee Classe[]     @relation("professeur")
+}
 
-  @@map("users")
+enum Role {
+  ELEVE
+  PROFESSEUR
 }
 
 model Classe {
-  id           String    @id @default(cuid())
+  id           String     @id @default(cuid())
   nom          String
-  professeur   User?     @relation("professeur", fields: [professeurId], references: [id], onDelete: Restrict, onUpdate: Restrict)
-  professeurId String?   @map("professeur_id")
-  eleves       User[]    @relation("eleves")
-  chatroom     Chatroom? @relation(fields: [chatroomId], references: [id])
-  chatroomId   String?   @unique @map("chatroom_id")
-
-  @@map("classes")
+  professeur   User?      @relation("professeur", fields: [professeurId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  professeurId String?    @unique
+  eleves       User[]     @relation("eleves")
+  chatroom     Chatroom?
+  chatroomId   String?    @unique
 }
 
 model EtatEleve {
   id         String  @id @default(cuid())
   eleve      User    @relation(fields: [eleveId], references: [id])
-  eleveId    String  @unique @map("eleve_id")
+  eleveId    String  @unique
   isPunished Boolean @default(false)
   metier     Metier? @relation(fields: [metierId], references: [id])
-  metierId   String? @map("metier_id")
-
-  @@map("etat_eleves")
+  metierId   String?
 }
 
 model Metier {
@@ -56,45 +57,32 @@ model Metier {
   description String
   theme       Json
   etats       EtatEleve[]
+}
 
-  @@map("metiers")
+model Message {
+  id          String     @id @default(cuid())
+  message     String
+  createdAt   DateTime   @default(now())
+  sender      User       @relation(fields: [senderId], references: [id])
+  senderId    String
+  senderName  String
+  chatroom    Chatroom   @relation(fields: [chatroomId], references: [id])
+  chatroomId  String
+  reactions   Reaction[]
+}
+
+model Reaction {
+  id        String  @id @default(cuid())
+  emoji     String
+  user      User    @relation(fields: [userId], references: [id])
+  userId    String
+  message   Message @relation(fields: [messageId], references: [id])
+  messageId String
 }
 
 model Chatroom {
   id       String    @id @default(cuid())
-  classe   Classe?
+  classe   Classe    @relation(fields: [classeId], references: [id])
+  classeId String    @unique
   messages Message[]
-
-  @@map("chatrooms")
-}
-
-model Message {
-  id         String     @id @default(cuid())
-  message    String
-  createdAt  DateTime   @default(now())
-  sender     User       @relation(fields: [senderId], references: [id])
-  senderId   String     @map("sender_id")
-  senderName String
-  chatroom   Chatroom   @relation(fields: [chatroomId], references: [id])
-  chatroomId String     @map("chatroom_id")
-  reactions  Reaction[]
-
-  @@map("messages")
-}
-
-model Reaction {
-  id        String   @id @default(cuid())
-  emoji     String
-  user      User     @relation(fields: [userId], references: [id])
-  userId    String   @map("user_id")
-  message   Message  @relation(fields: [messageId], references: [id])
-  messageId String   @map("message_id")
-
-  @@unique([userId, messageId, emoji])
-  @@map("reactions")
-}
-
-enum Role {
-  ELEVE
-  PROFESSEUR
 }
