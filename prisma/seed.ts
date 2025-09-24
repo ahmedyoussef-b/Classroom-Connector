@@ -4,9 +4,10 @@ import { PrismaClient, Role } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('Start seeding ...');
+  console.log('🚀 Démarrage du seeding...');
 
   // Clean up existing data
+  console.log('🧹 Nettoyage des anciennes données...');
   await prisma.reaction.deleteMany();
   await prisma.message.deleteMany();
   await prisma.etatEleve.deleteMany();
@@ -14,8 +15,10 @@ async function main() {
   await prisma.classe.deleteMany();
   await prisma.metier.deleteMany();
   await prisma.chatroom.deleteMany();
+  console.log('✅ Données nettoyées.');
 
   // Create careers (métiers)
+  console.log('🎨 Création des métiers...');
   const pompier = await prisma.metier.create({
     data: {
       nom: 'Pompier',
@@ -60,10 +63,10 @@ async function main() {
       },
     },
   });
-
-  console.log('Careers created.');
+  console.log('✅ Métiers créés.');
 
   // Create a teacher
+  console.log('🧑‍🏫 Création du professeur...');
   const teacher = await prisma.user.create({
     data: {
       id: 'teacher-id',
@@ -72,15 +75,17 @@ async function main() {
       role: Role.PROFESSEUR,
     },
   });
-
-  console.log('Teacher created.');
+  console.log('✅ Professeur créé.');
 
   // Create a chatroom
+  console.log('💬 Création du salon de discussion...');
   const chatroom = await prisma.chatroom.create({
     data: {},
   });
+  console.log('✅ Salon de discussion créé.');
 
   // Create a class
+  console.log('🏫 Création de la classe...');
   const classeA = await prisma.classe.create({
     data: {
       nom: 'Classe A',
@@ -88,10 +93,10 @@ async function main() {
       chatroomId: chatroom.id,
     },
   });
-
-  console.log('Class created.');
+  console.log('✅ Classe créée.');
 
   // Create students
+  console.log('🧑‍🎓 Création des élèves...');
   const studentsData = [
     { name: 'Alice', ambition: 'devenir pompier' },
     { name: 'Bob', ambition: 'explorer Mars' },
@@ -120,10 +125,10 @@ async function main() {
       },
     });
   }
-
-  console.log('Students and their states created.');
+  console.log('✅ Élèves et leurs états créés.');
 
   // Create some messages in the chatroom
+  console.log('✉️ Création des messages...');
   await prisma.message.create({
     data: {
         message: "Bonjour la classe! N'oubliez pas vos devoirs pour demain.",
@@ -141,14 +146,14 @@ async function main() {
         chatroomId: chatroom.id,
     }
   });
-
-  console.log('Messages created.');
-  console.log('Seeding finished.');
+  console.log('✅ Messages créés.');
+  
+  console.log('🎉 Seeding terminé avec succès !');
 }
 
 main()
   .catch((e) => {
-    console.error(e);
+    console.error('❌ Une erreur est survenue durant le seeding :', e);
     process.exit(1);
   })
   .finally(async () => {
