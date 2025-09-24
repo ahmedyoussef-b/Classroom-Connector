@@ -1,6 +1,5 @@
 generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["accelerate"]
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -8,17 +7,23 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id              String    @id @default(cuid())
-  email           String    @unique
-  name            String?
-  role            Role
-  classeEnseignee Classe?   @relation("ProfesseurClasse")
-  classe          Classe?   @relation("ElevesClasse")
-  messages        Message[]
-  reactions       Reaction[]
+enum Role {
+  PROFESSEUR
+  ELEVE
+}
 
-  @@map("users")
+model User {
+  id                  String   @id @default(cuid())
+  email               String   @unique
+  nom                 String
+  role                Role
+  classeEnseignee     Classe[] @relation("ProfesseurClasse")
+  classe              Classe[] @relation("ElevesClasse")
+  etatEleve           EtatEleve?
+  messages            Message[]
+  reactions           Reaction[]
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 }
 
 model Classe {
@@ -27,61 +32,60 @@ model Classe {
   professeurId String @unique
   professeur   User   @relation("ProfesseurClasse", fields: [professeurId], references: [id])
   eleves       User[] @relation("ElevesClasse")
-
-  @@map("classes")
+  chatroom     Chatroom?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
 
 model Metier {
-  id          String @id @default(cuid())
+  id          String   @id @default(cuid())
   nom         String
   description String
-  theme       Json
-
-  @@map("metiers")
+  theme       Json // Regroupe tous les attributs de thème
+  etatEleve   EtatEleve[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model EtatEleve {
   id         String  @id @default(cuid())
   eleveId    String  @unique
+  eleve      User    @relation(fields: [eleveId], references: [id])
   metierId   String?
+  metier     Metier? @relation(fields: [metierId], references: [id])
   isPunished Boolean @default(false)
-
-  @@map("etats_eleves")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
 model Chatroom {
   id        String    @id @default(cuid())
-  classeId  String
+  classeId  String    @unique
+  classe    Classe    @relation(fields: [classeId], references: [id])
   messages  Message[]
-
-  @@map("chatrooms")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 }
 
 model Message {
   id         String     @id @default(cuid())
-  contenu    String
-  auteurId   String
-  auteur     User       @relation(fields: [auteurId], references: [id])
   chatroomId String
   chatroom   Chatroom   @relation(fields: [chatroomId], references: [id])
-  timestamp  DateTime   @default(now())
+  auteurId   String
+  auteur     User       @relation(fields: [auteurId], references: [id])
+  contenu    String
   reactions  Reaction[]
-
-  @@map("messages")
+  createdAt  DateTime   @default(now())
 }
 
 model Reaction {
   id        String  @id @default(cuid())
-  emoji     String
   messageId String
   message   Message @relation(fields: [messageId], references: [id])
   auteurId  String
   auteur    User    @relation(fields: [auteurId], references: [id])
+  emoji     String
+  createdAt DateTime @default(now())
 
-  @@map("reactions")
-}
-
-enum Role {
-  PROFESSEUR
-  ELEVE
+  @@unique([messageId, auteurId, emoji])
 }
