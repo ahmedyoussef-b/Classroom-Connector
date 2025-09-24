@@ -1,30 +1,14 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["driverAdapters"]
-}
+// prisma/schema.prisma
 
 datasource db {
   provider     = "postgresql"
   url          = env("DATABASE_URL")
-  directUrl    = env("DIRECT_URL")
   relationMode = "prisma"
 }
 
-model User {
-  id              String       @id @default(cuid())
-  email           String       @unique
-  name            String?
-  role            Role
-  ambition        String?
-  classe          Classe?      @relation("eleves", fields: [classeId], references: [id])
-  classeId        String?
-  etat            EtatEleve?
-  messages        Message[]
-  reactions       Reaction[]
-  classeEnseignee Classe[]     @relation("professeur")
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
 }
 
 enum Role {
@@ -32,14 +16,31 @@ enum Role {
   PROFESSEUR
 }
 
+model User {
+  id         String    @id @default(cuid())
+  email      String    @unique
+  name       String?
+  role       Role      @default(ELEVE)
+  ambition   String?
+  classe     Classe?   @relation(fields: [classeId], references: [id])
+  classeId   String?
+  etat       EtatEleve?
+  messages   Message[]
+  reactions  Reaction[]
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+}
+
 model Classe {
-  id           String     @id @default(cuid())
+  id           String    @id @default(cuid())
   nom          String
-  professeur   User?      @relation("professeur", fields: [professeurId], references: [id], onDelete: Restrict, onUpdate: Restrict)
-  professeurId String?    @unique
-  eleves       User[]     @relation("eleves")
-  chatroom     Chatroom?
-  chatroomId   String?    @unique
+  professeur   User?     @relation(fields: [professeurId], references: [id])
+  professeurId String?
+  eleves       User[]
+  chatroom     Chatroom? @relation(fields: [chatroomId], references: [id])
+  chatroomId   String?   @unique
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 }
 
 model EtatEleve {
@@ -56,19 +57,19 @@ model Metier {
   nom         String
   description String
   theme       Json
-  etats       EtatEleve[]
+  eleves      EtatEleve[]
 }
 
 model Message {
   id          String     @id @default(cuid())
   message     String
-  createdAt   DateTime   @default(now())
   sender      User       @relation(fields: [senderId], references: [id])
   senderId    String
   senderName  String
   chatroom    Chatroom   @relation(fields: [chatroomId], references: [id])
   chatroomId  String
   reactions   Reaction[]
+  createdAt   DateTime   @default(now())
 }
 
 model Reaction {
@@ -78,11 +79,14 @@ model Reaction {
   userId    String
   message   Message @relation(fields: [messageId], references: [id])
   messageId String
+
+  @@unique([userId, messageId, emoji])
 }
 
 model Chatroom {
-  id       String    @id @default(cuid())
-  classe   Classe    @relation(fields: [classeId], references: [id])
-  classeId String    @unique
-  messages Message[]
+  id        String    @id @default(cuid())
+  classe    Classe?
+  messages  Message[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 }
