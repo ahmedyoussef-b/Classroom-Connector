@@ -1,31 +1,23 @@
-import type { LucideIcon } from "lucide-react";
+import type { Prisma } from '@prisma/client';
 
-export interface Career {
-  id: string;
-  name: string;
-  description: string;
-  theme: {
-    backgroundColor: string;
-    backgroundImage: string;
-    primaryColor: string;
-    accentColor: string;
-    textColor: string;
-    icon: LucideIcon;
-    cursor: string;
-  };
-}
+export type UserWithClasse = Prisma.UserGetPayload<{
+    include: { classe: true }
+}>
 
-export interface Student {
-  id: string;
-  name: string;
-  ambition: string;
-}
+export type ClasseWithUsers = Prisma.ClasseGetPayload<{
+    include: { eleves: true, professeur: true }
+}>
 
-export interface ChatMessage {
-  id: string;
-  senderId: string; // 'teacher' or student's id
-  senderName: string;
-  message: string;
-  timestamp: Date;
-  reactions?: { [emoji: string]: string[] };
-}
+export type StudentWithStateAndCareer = Prisma.UserGetPayload<{
+    include: { 
+        etat: {
+            include: {
+                metier: true
+            }
+        }
+    }
+}>
+
+export type MessageWithReactions = Prisma.MessageGetPayload<{
+    include: { reactions: true }
+}>

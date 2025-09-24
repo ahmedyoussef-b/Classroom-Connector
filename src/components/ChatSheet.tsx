@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useTransition, useRef, useEffect } from 'react';
 import {
   Sheet,
   SheetContent,
@@ -11,7 +11,6 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from './ui/button';
 import { MessageCircle, Send, SmilePlus } from 'lucide-react';
-import { useApp } from '@/context/AppContext';
 import { Input } from './ui/input';
 import { Avatar, AvatarFallback } from './ui/avatar';
 import { ScrollArea } from './ui/scroll-area';
@@ -19,7 +18,9 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { EmojiPicker } from './EmojiPicker';
-import type { ChatMessage } from '@/lib/types';
+import { getMessages, sendMessage, toggleReaction } from '@/lib/actions';
+import { MessageWithReactions } from '@/lib/types';
+import { useFormStatus } from 'react-dom';
 
 function ReactionBubble({ emoji, count, hasReacted }: { emoji: string, count: number, hasReacted: boolean }) {
     return (
@@ -33,34 +34,36 @@ function ReactionBubble({ emoji, count, hasReacted }: { emoji: string, count: nu
     )
 }
 
-function Message({ msg, currentUserId }: { msg: ChatMessage, currentUserId: string }) {
-    const { students, toggleReaction } = useApp();
-    const isTeacher = msg.senderId === 'teacher';
-    const student = !isTeacher ? students.find(s => s.id === msg.senderId) : null;
+function Message({ msg, currentUserId, onReaction }: { msg: MessageWithReactions, currentUserId: string, onReaction: (emoji: string) => void }) {
+    const isTeacher = msg.senderId === 'teacher-id'; // Assume a fixed teacher ID for now
+    const reactionsByEmoji: { [key: string]: string[] } = {};
+    
+    msg.reactions.forEach(r => {
+        if (!reactionsByEmoji[r.emoji]) {
+            reactionsByEmoji[r.emoji] = [];
+        }
+        reactionsByEmoji[r.emoji].push(r.userId);
+    });
 
-    const handleEmojiSelect = (emoji: string) => {
-        toggleReaction(msg.id, emoji, currentUserId);
-    };
-
-    const reactions = msg.reactions && Object.entries(msg.reactions).filter(([, users]) => users.length > 0);
+    const reactionEntries = Object.entries(reactionsByEmoji);
 
     return (
         <div className="group relative">
             <div className={cn("flex items-start gap-3", isTeacher ? "justify-end" : "justify-start")}>
                 {!isTeacher && (
                     <Avatar className="h-8 w-8">
-                        <AvatarFallback>{student?.name.charAt(0)}</AvatarFallback>
+                        <AvatarFallback>{msg.senderName?.charAt(0)}</AvatarFallback>
                     </Avatar>
                 )}
                 <div className="flex flex-col gap-1 items-end">
                     <div className={cn("max-w-xs rounded-lg p-3 text-sm relative", isTeacher ? "bg-primary text-primary-foreground" : "bg-muted")}>
                         <p className="font-bold">{msg.senderName}</p>
                         <p className="mt-1">{msg.message}</p>
-                        <p className="mt-2 text-xs opacity-60 text-right">{format(msg.timestamp, 'p')}</p>
+                        <p className="mt-2 text-xs opacity-60 text-right">{format(new Date(msg.createdAt), 'p')}</p>
                     </div>
-                     {reactions && reactions.length > 0 && (
+                     {reactionEntries.length > 0 && (
                         <div className="flex gap-1 flex-wrap">
-                            {reactions.map(([emoji, users]) => (
+                            {reactionEntries.map(([emoji, users]) => (
                                 <ReactionBubble key={emoji} emoji={emoji} count={users.length} hasReacted={users.includes(currentUserId)} />
                             ))}
                         </div>
@@ -86,31 +89,93 @@ function Message({ msg, currentUserId }: { msg: ChatMessage, currentUserId: stri
                     </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0 border-0">
-                    <EmojiPicker onEmojiSelect={handleEmojiSelect} />
+                    <EmojiPicker onEmojiSelect={onReaction} />
                 </PopoverContent>
             </Popover>
         </div>
     )
 }
 
+function SubmitButton() {
+    const { pending } = useFormStatus();
+    return (
+        <Button type="submit" size="icon" aria-label="Send message" disabled={pending}>
+          <Send className="h-4 w-4" />
+        </Button>
+    )
+}
 
-export function ChatSheet() {
-  const { messages, sendMessage } = useApp();
-  const [newMessage, setNewMessage] = useState('');
-  
+
+export function ChatSheet({ chatroomId }: { chatroomId: string }) {
+  const [messages, setMessages] = useState<MessageWithReactions[]>([]);
+  const [isPending, startTransition] = useTransition();
+  const formRef = useRef<HTMLFormElement>(null);
   // In a real app, you'd get this from auth context
-  const currentUserId = 'teacher'; 
+  const currentUserId = 'teacher-id'; 
 
-  const handleSendMessage = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newMessage.trim()) {
-      sendMessage({
-        senderId: currentUserId,
-        senderName: currentUserId === 'teacher' ? 'Professeur' : 'Current Student',
-        message: newMessage.trim(),
+  useEffect(() => {
+    const fetchMessages = () => {
+      startTransition(async () => {
+        const res = await getMessages(chatroomId);
+        setMessages(res);
       });
-      setNewMessage('');
-    }
+    };
+    fetchMessages();
+  }, [chatroomId]);
+
+
+  const handleReaction = (messageId: string, emoji: string) => {
+    startTransition(async () => {
+        // Optimistic UI update
+        const newMessages = messages.map(msg => {
+            if (msg.id === messageId) {
+                const newReactions = [...msg.reactions];
+                const existingIndex = newReactions.findIndex(r => r.emoji === emoji && r.userId === currentUserId);
+                if (existingIndex > -1) {
+                    newReactions.splice(existingIndex, 1);
+                } else {
+                    newReactions.push({ id: 'temp', emoji, userId: currentUserId, messageId });
+                }
+                return { ...msg, reactions: newReactions };
+            }
+            return msg;
+        });
+        setMessages(newMessages);
+        
+        // Call server action
+        await toggleReaction(messageId, emoji, currentUserId);
+        
+        // Re-fetch to confirm
+        const updatedMessages = await getMessages(chatroomId);
+        setMessages(updatedMessages);
+    });
+  };
+  
+    const handleSendMessage = async (formData: FormData) => {
+        const message = formData.get('message') as string;
+        if (!message.trim()) return;
+
+        startTransition(async () => {
+             // Optimistic UI update
+            const tempId = `temp-${Date.now()}`;
+            const newMessage: MessageWithReactions = {
+                id: tempId,
+                message: message,
+                senderId: currentUserId,
+                senderName: 'Moi',
+                chatroomId,
+                createdAt: new Date(),
+                reactions: [],
+            };
+            setMessages(prev => [...prev, newMessage]);
+            formRef.current?.reset();
+
+            await sendMessage(formData);
+
+            // Re-fetch to confirm and get real ID
+            const updatedMessages = await getMessages(chatroomId);
+            setMessages(updatedMessages);
+        });
   };
 
   return (
@@ -131,20 +196,24 @@ export function ChatSheet() {
           <ScrollArea className="flex-1 pr-4 -mr-4">
             <div className="space-y-6 py-4">
               {messages.map((msg) => (
-                <Message key={msg.id} msg={msg} currentUserId={currentUserId} />
+                <Message key={msg.id} msg={msg} currentUserId={currentUserId} onReaction={(emoji) => handleReaction(msg.id, emoji)} />
               ))}
             </div>
           </ScrollArea>
-          <form onSubmit={handleSendMessage} className="flex gap-2 border-t pt-4">
+          <form 
+            ref={formRef}
+            action={handleSendMessage} 
+            className="flex gap-2 border-t pt-4"
+          >
+            <input type="hidden" name="senderId" value={currentUserId} />
+            <input type="hidden" name="chatroomId" value={chatroomId} />
             <Input
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
+              name="message"
               placeholder="Écrivez un message..."
               autoComplete="off"
+              disabled={isPending}
             />
-            <Button type="submit" size="icon" aria-label="Send message">
-              <Send className="h-4 w-4" />
-            </Button>
+            <SubmitButton />
           </form>
         </div>
       </SheetContent>

@@ -1,14 +1,29 @@
-"use client";
-
-import { useApp } from '@/context/AppContext';
 import { StudentCard } from '@/components/StudentCard';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
+import prisma from '@/lib/prisma';
+import { notFound } from 'next/navigation';
 
-export default function ClassAPage() {
-  const { students } = useApp();
+export default async function ClassPage({ params }: { params: { id: string } }) {
+  const classe = await prisma.classe.findUnique({
+    where: { id: params.id },
+    include: {
+      eleves: {
+        include: {
+          etat: true,
+        },
+        orderBy: { name: 'asc' }
+      }
+    }
+  });
+
+  const metiers = await prisma.metier.findMany();
+
+  if (!classe) {
+    notFound();
+  }
 
   return (
     <>
@@ -21,14 +36,14 @@ export default function ClassAPage() {
              </Link>
            </Button>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Classe A</h1>
+            <h1 className="text-3xl font-bold tracking-tight">{classe.nom}</h1>
             <p className="text-muted-foreground">Gérez vos élèves et leur parcours d'apprentissage.</p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {students.map((student) => (
-            <StudentCard key={student.id} student={student} />
+          {classe.eleves.map((student) => (
+            <StudentCard key={student.id} student={student} careers={metiers} />
           ))}
         </div>
       </main>

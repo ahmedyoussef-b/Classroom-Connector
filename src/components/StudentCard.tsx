@@ -1,7 +1,7 @@
 "use client";
 
-import type { Student } from '@/lib/types';
-import { useApp } from '@/context/AppContext';
+import type { User, EtatEleve, Metier } from '@prisma/client';
+import { setStudentCareer, togglePunishment } from '@/lib/actions';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Button } from './ui/button';
@@ -9,34 +9,44 @@ import { Ban, CheckCircle } from 'lucide-react';
 import { Avatar, AvatarFallback } from './ui/avatar';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { useTransition } from 'react';
+
+// We need to re-import an icon here as Lucide icons cannot be passed from server to client components
+import { BookOpen } from 'lucide-react';
 
 interface StudentCardProps {
-  student: Student;
+  student: User & { etat: EtatEleve | null };
+  careers: Metier[];
 }
 
-export function StudentCard({ student }: StudentCardProps) {
-  const { careers, studentStates, setStudentCareer, togglePunishment } = useApp();
-  const state = studentStates.get(student.id);
+export function StudentCard({ student, careers }: StudentCardProps) {
+  const [isPending, startTransition] = useTransition();
 
   const handleCareerChange = (careerId: string) => {
-    setStudentCareer(student.id, careerId === 'none' ? null : careerId);
+    startTransition(() => {
+      setStudentCareer(student.id, careerId === 'none' ? null : careerId);
+    });
   };
 
   const handlePunish = () => {
-    togglePunishment(student.id);
+    startTransition(() => {
+      togglePunishment(student.id);
+    });
   };
   
-  const currentCareer = careers.find(c => c.id === state?.careerId);
+  const state = student.etat;
+  const currentCareer = careers.find(c => c.id === state?.metierId);
 
   return (
     <Card className={cn(
       "flex flex-col transition-all duration-300 hover:shadow-xl hover:-translate-y-1",
-      state?.isPunished && "bg-destructive/10 border-destructive"
+      state?.isPunished && "bg-destructive/10 border-destructive",
+      (isPending) && "opacity-50"
     )}>
       <CardHeader>
         <div className="flex items-center gap-4">
           <Avatar className="h-12 w-12">
-            <AvatarFallback className="text-xl">{student.name.charAt(0)}</AvatarFallback>
+            <AvatarFallback className="text-xl">{student.name?.charAt(0)}</AvatarFallback>
           </Avatar>
           <div>
             <CardTitle>{student.name}</CardTitle>
@@ -49,7 +59,11 @@ export function StudentCard({ student }: StudentCardProps) {
           <label htmlFor={`career-select-${student.id}`} className="text-sm font-medium text-muted-foreground">
             Métier assigné
           </label>
-          <Select onValueChange={handleCareerChange} value={state?.careerId ?? 'none'} disabled={state?.isPunished}>
+          <Select 
+            onValueChange={handleCareerChange} 
+            value={state?.metierId ?? 'none'} 
+            disabled={state?.isPunished || isPending}
+          >
             <SelectTrigger id={`career-select-${student.id}`} className="w-full">
               <SelectValue placeholder="Sélectionnez un métier..." />
             </SelectTrigger>
@@ -58,8 +72,8 @@ export function StudentCard({ student }: StudentCardProps) {
               {careers.map((career) => (
                 <SelectItem key={career.id} value={career.id}>
                   <div className="flex items-center gap-2">
-                    <career.theme.icon className="h-4 w-4" />
-                    {career.name}
+                    <BookOpen className="h-4 w-4" />
+                    {career.nom}
                   </div>
                 </SelectItem>
               ))}
@@ -68,8 +82,8 @@ export function StudentCard({ student }: StudentCardProps) {
         </div>
          {currentCareer && !state?.isPunished && (
           <div className="text-sm text-muted-foreground flex items-center gap-2 p-2 bg-muted rounded-md">
-            <currentCareer.theme.icon className="h-4 w-4 text-primary" />
-            <span>Thème: {currentCareer.name}.</span>
+            <BookOpen className="h-4 w-4 text-primary" />
+            <span>Thème: {currentCareer.nom}.</span>
           </div>
         )}
       </CardContent>
@@ -78,6 +92,7 @@ export function StudentCard({ student }: StudentCardProps) {
           variant={state?.isPunished ? 'destructive' : 'outline'}
           onClick={handlePunish}
           className="w-full"
+          disabled={isPending}
         >
           {state?.isPunished ? (
             <Ban className="mr-2 h-4 w-4" />

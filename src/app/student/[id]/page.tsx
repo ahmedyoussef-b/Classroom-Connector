@@ -1,32 +1,47 @@
-"use client";
-
-import { useApp } from '@/context/AppContext';
-import { useParams } from 'next/navigation';
 import { Header } from '@/components/Header';
 import { CareerThemeWrapper } from '@/components/CareerThemeWrapper';
 import { PersonalizedContent } from '@/components/PersonalizedContent';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertTriangle, Smile } from 'lucide-react';
+import prisma from '@/lib/prisma';
+import { notFound } from 'next/navigation';
+import type { Metier } from '@prisma/client';
 
-export default function StudentPage() {
-  const params = useParams();
-  const studentId = typeof params.id === 'string' ? params.id : '';
-  const { students, careers, studentStates } = useApp();
+// We need to re-import an icon here as Lucide icons cannot be passed from server to client components
+import { BookOpen } from 'lucide-react';
 
-  const student = students.find((s) => s.id === studentId);
-  const state = studentStates.get(studentId);
-  const career = careers.find((c) => c.id === state?.careerId);
+export default async function StudentPage({ params }: { params: { id: string } }) {
+  const studentId = params.id;
+
+  const student = await prisma.user.findUnique({
+    where: { id: studentId, role: 'ELEVE' },
+    include: {
+      etat: {
+        include: {
+          metier: true
+        }
+      }
+    }
+  });
 
   if (!student) {
-    return (
-      <>
-        <Header />
-        <main className="flex items-center justify-center min-h-[calc(100vh-4rem)]">
-          <h1 className="text-2xl font-bold">Élève non trouvé.</h1>
-        </main>
-      </>
-    );
+    notFound();
   }
+
+  const state = student.etat;
+  const career = student.etat?.metier;
+  
+  // A bit of a hack because we can't pass Lucide icons from server to client.
+  // We'll pass the theme object and reconstruct the Icon on the client.
+  // In a real app, we might have a mapping of icon names to components.
+  const careerWithTheme = career ? {
+      ...career,
+      theme: {
+          ...career.theme as any,
+          icon: BookOpen
+      }
+  } : undefined;
+
 
   const isPunished = state?.isPunished ?? false;
 
@@ -37,7 +52,7 @@ export default function StudentPage() {
                 <CardHeader className="p-0 mb-4">
                     <CardTitle className="text-4xl font-bold">Bienvenue, {student.name}!</CardTitle>
                     {career && (
-                        <CardDescription className="text-lg pt-2">Vous explorez le monde d'un(e) {career.name}.</CardDescription>
+                        <CardDescription className="text-lg pt-2">Vous explorez le monde d'un(e) {career.nom}.</CardDescription>
                     )}
                 </CardHeader>
                 <PersonalizedContent student={student} />
@@ -66,7 +81,7 @@ export default function StudentPage() {
   );
 
   return (
-    <CareerThemeWrapper career={!isPunished ? career : undefined}>
+    <CareerThemeWrapper career={!isPunished ? careerWithTheme : undefined}>
       <div className="flex flex-col min-h-screen">
         <Header />
         <main className="flex-grow flex items-center justify-center">

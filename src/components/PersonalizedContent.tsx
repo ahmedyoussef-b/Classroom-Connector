@@ -4,12 +4,12 @@ import { useState } from 'react';
 import { personalizedLearningAmbitionDisplay } from '@/ai/flows/personalized-learning-ambition-display';
 import { Button } from './ui/button';
 import { Loader2, Sparkles } from 'lucide-react';
-import type { Student } from '@/lib/types';
+import type { User } from '@prisma/client';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import { Card, CardContent } from './ui/card';
 
 interface PersonalizedContentProps {
-  student: Student;
+  student: User;
 }
 
 function Markdown({ content }: { content: string }) {
@@ -80,8 +80,8 @@ export function PersonalizedContent({ student }: PersonalizedContentProps) {
     try {
       const result = await personalizedLearningAmbitionDisplay({
         studentId: student.id,
-        name: student.name,
-        careerAmbitions: student.ambition,
+        name: student.name ?? 'Student',
+        careerAmbitions: student.ambition ?? 'Not specified',
       });
       setContent(result.personalizedContent);
     } catch (e) {

@@ -1,20 +1,30 @@
 "use client";
 
-import { Career } from '@/lib/types';
+import type { Metier } from '@prisma/client';
+import type { LucideIcon } from 'lucide-react';
 import React from 'react';
 
+type CareerWithIcon = Omit<Metier, 'theme'> & {
+    theme: {
+        icon: LucideIcon;
+        [key: string]: any;
+    }
+}
+
 interface CareerThemeWrapperProps {
-  career?: Career;
+  career?: CareerWithIcon;
   children: React.ReactNode;
 }
 
 export function CareerThemeWrapper({ career, children }: CareerThemeWrapperProps) {
+    const theme = career?.theme as any; // Cast to any to access dynamic properties
+
   const themeStyles: React.CSSProperties = career
     ? {
-        '--custom-bg-image': career.theme.backgroundImage,
-        '--primary-hsl': career.theme.primaryColor,
-        '--accent-hsl': career.theme.accentColor,
-        cursor: career.theme.cursor.replace('cursor-', ''),
+        '--custom-bg-image': theme?.backgroundImage,
+        '--primary-hsl': theme?.primaryColor,
+        '--accent-hsl': theme?.accentColor,
+        cursor: theme?.cursor.replace('cursor-', ''),
       }
     : {
         '--primary-hsl': '207 90% 54%',
@@ -22,7 +32,7 @@ export function CareerThemeWrapper({ career, children }: CareerThemeWrapperProps
       };
 
   const themeClasses = career 
-    ? `bg-gradient-to-br ${career.theme.backgroundColor} ${career.theme.textColor}`
+    ? `bg-gradient-to-br ${theme?.backgroundColor} ${theme?.textColor}`
     : 'bg-background text-foreground';
 
   return (
@@ -30,10 +40,10 @@ export function CareerThemeWrapper({ career, children }: CareerThemeWrapperProps
       style={themeStyles}
       className={`transition-all duration-700 ease-in-out ${themeClasses}`}
     >
-      {career?.theme.backgroundImage && (
+      {theme?.backgroundImage && (
         <div 
           className="fixed inset-0 w-full h-full opacity-50 z-[-1]" 
-          style={{ backgroundImage: career.theme.backgroundImage }}
+          style={{ backgroundImage: theme.backgroundImage }}
         />
       )}
       {children}
