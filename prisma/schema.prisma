@@ -1,104 +1,88 @@
 
-datasource db {
-  provider     = "postgresql"
-  url          = env("DATABASE_URL")
-  relationMode = "prisma"
-}
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.by/d/prisma-schema
 
 generator client {
   provider = "prisma-client-js"
 }
 
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ELEVE
+  PROFESSEUR
+}
+
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
+  id        String    @id @default(cuid())
+  email     String    @unique
   name      String?
-  role      Role     @default(ELEVE)
+  role      Role      @default(ELEVE)
   ambition  String?
+  classe    Classe?   @relation("ElevesDansClasse", fields: [classeId], references: [id])
   classeId  String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  etat      EtatEleve?
+  messages  Message[]
+  reactions Reaction[]
 
-  classe      Classe?    @relation(fields: [classeId], references: [id])
-  etat        EtatEleve?
-  messages    Message[]
-  reactions   Reaction[]
-
-  @@index([classeId])
+  classesEnseignees Classe[] @relation("ProfesseurPourClasse")
 }
 
 model Classe {
-  id           String @id @default(uuid())
-  nom          String
-  professeurId String @unique
-  chatroomId   String @unique
+  id            String   @id @default(c1uid())
+  nom           String
+  professeur    User     @relation("ProfesseurPourClasse", fields: [professeurId], references: [id])
+  professeurId  String
+  eleves        User[]   @relation("ElevesDansClasse")
+  chatroomId    String   @unique
+  chatroom      Chatroom @relation(fields: [chatroomId], references: [id])
+}
 
-  professeur User      @relation(fields: [professeurId], references: [id])
-  eleves     User[]
-  chatroom   Chatroom  @relation(fields: [chatroomId], references: [id])
-
-  @@index([professeurId])
+model EtatEleve {
+  id         String  @id @default(cuid())
+  eleve      User    @relation(fields: [eleveId], references: [id])
+  eleveId    String  @unique
+  isPunished Boolean @default(false)
+  metier     Metier? @relation(fields: [metierId], references: [id])
+  metierId   String?
 }
 
 model Metier {
-  id          String   @id @default(uuid())
+  id          String      @id @default(cuid())
   nom         String
   description String
   theme       Json
   etats       EtatEleve[]
 }
 
-model EtatEleve {
-  id         String  @id @default(uuid())
-  eleveId    String  @unique
-  metierId   String?
-  isPunished Boolean @default(false)
-
-  eleve  User    @relation(fields: [eleveId], references: [id], onDelete: Cascade)
-  metier Metier? @relation(fields: [metierId], references: [id])
-
-  @@index([metierId])
-}
-
 model Chatroom {
-  id        String    @id @default(uuid())
-  messages  Message[]
-  classe    Classe?
+  id       String    @id @default(cuid())
+  classe   Classe?
+  messages Message[]
 }
 
 model Message {
-  id          String     @id @default(uuid())
+  id          String     @id @default(cuid())
   message     String
+  createdAt   DateTime   @default(now())
+  sender      User       @relation(fields: [senderId], references: [id])
   senderId    String
   senderName  String
+  chatroom    Chatroom   @relation(fields: [chatroomId], references: [id])
   chatroomId  String
-  createdAt   DateTime   @default(now())
-
-  sender    User       @relation(fields: [senderId], references: [id])
-  chatroom  Chatroom   @relation(fields: [chatroomId], references: [id])
-  reactions Reaction[]
-
-  @@index([senderId])
-  @@index([chatroomId])
+  reactions   Reaction[]
 }
 
 model Reaction {
-  id        String   @id @default(uuid())
+  id        String  @id @default(cuid())
   emoji     String
+  user      User    @relation(fields: [userId], references: [id])
   userId    String
+  message   Message @relation(fields: [messageId], references: [id])
   messageId String
-  createdAt DateTime @default(now())
 
-  user    User    @relation(fields: [userId], references: [id])
-  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
-
-  @@unique([emoji, userId, messageId])
-  @@index([userId])
-  @@index([messageId])
-}
-
-
-enum Role {
-  ELEVE
-  PROFESSEUR
+  @@unique([userId, messageId, emoji])
 }
