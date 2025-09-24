@@ -1,48 +1,53 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// prisma/schema.prisma
+
+datasource db {
+  provider     = "postgresql"
+  url          = env("DATABASE_URL")
+  directUrl    = env("DIRECT_URL")
+  relationMode = "prisma"
+}
 
 generator client {
   provider = "prisma-client-js"
 }
 
-datasource db {
-  provider     = "postgresql"
-  url          = env("DATABASE_URL")
-}
-
 model User {
-  id              String     @id @default(cuid())
-  email           String?    @unique
+  id              String       @id @default(cuid())
+  email           String       @unique
   name            String?
-  role            Role       @default(ELEVE)
+  role            Role
   ambition        String?
-  classeEnseignee Classe[]   @relation("Professeurs")
-  classe          Classe?    @relation("Eleves", fields: [classeId], references: [id])
-  classeId        String?
+  classeEnseignee Classe[]     @relation("professeur")
+  classe          Classe?      @relation("eleves", fields: [classeId], references: [id])
+  classeId        String?      @map("classe_id")
   etat            EtatEleve?
   messages        Message[]
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
+  reactions       Reaction[]
+
+  @@map("users")
 }
 
 model Classe {
-  id           String   @id @default(cuid())
+  id           String    @id @default(cuid())
   nom          String
-  professeur   User?    @relation("Professeurs", fields: [professeurId], references: [id])
-  professeurId String?  @unique
-  eleves       User[]   @relation("Eleves")
-  chatroomId   String   @unique @default(cuid())
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  professeur   User?     @relation("professeur", fields: [professeurId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  professeurId String?   @map("professeur_id")
+  eleves       User[]    @relation("eleves")
+  chatroom     Chatroom? @relation(fields: [chatroomId], references: [id])
+  chatroomId   String?   @unique @map("chatroom_id")
+
+  @@map("classes")
 }
 
 model EtatEleve {
   id         String  @id @default(cuid())
   eleve      User    @relation(fields: [eleveId], references: [id])
-  eleveId    String  @unique
-  metier     Metier? @relation(fields: [metierId], references: [id])
-  metierId   String?
+  eleveId    String  @unique @map("eleve_id")
   isPunished Boolean @default(false)
+  metier     Metier? @relation(fields: [metierId], references: [id])
+  metierId   String? @map("metier_id")
+
+  @@map("etat_eleves")
 }
 
 model Metier {
@@ -51,25 +56,42 @@ model Metier {
   description String
   theme       Json
   etats       EtatEleve[]
+
+  @@map("metiers")
+}
+
+model Chatroom {
+  id       String    @id @default(cuid())
+  classe   Classe?
+  messages Message[]
+
+  @@map("chatrooms")
 }
 
 model Message {
   id         String     @id @default(cuid())
   message    String
-  sender     User       @relation(fields: [senderId], references: [id])
-  senderId   String
-  senderName String
-  chatroomId String
-  reactions  Reaction[]
   createdAt  DateTime   @default(now())
+  sender     User       @relation(fields: [senderId], references: [id])
+  senderId   String     @map("sender_id")
+  senderName String
+  chatroom   Chatroom   @relation(fields: [chatroomId], references: [id])
+  chatroomId String     @map("chatroom_id")
+  reactions  Reaction[]
+
+  @@map("messages")
 }
 
 model Reaction {
   id        String   @id @default(cuid())
   emoji     String
-  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String   @map("user_id")
   message   Message  @relation(fields: [messageId], references: [id])
-  messageId String
+  messageId String   @map("message_id")
+
+  @@unique([userId, messageId, emoji])
+  @@map("reactions")
 }
 
 enum Role {
