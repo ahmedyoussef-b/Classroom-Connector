@@ -11,42 +11,42 @@ datasource db {
 }
 
 model User {
-  id          String     @id @default(uuid())
-  name        String
-  email       String     @unique
-  role        Role
-  classeId    String?
-  classe      Classe?    @relation(fields: [classeId], references: [id])
-  etatEleve   EtatEleve?
-  messages    Message[]
-  reactions   Reaction[]
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  id             String      @id @default(cuid())
+  nom            String
+  email          String      @unique
+  role           Role
+  classeEnseignee Classe?     @relation("ProfesseurClasse")
+  classeEleve    Classe?     @relation("ElevesClasse", fields: [classeId], references: [id])
+  classeId       String?
+  etatEleve      EtatEleve?
+  messages       Message[]
+  reactions      Reaction[]
+}
+
+enum Role {
+  PROFESSEUR
+  ELEVE
 }
 
 model Classe {
-  id           String    @id @default(uuid())
-  name         String
+  id           String    @id @default(cuid())
+  nom          String
   professeurId String    @unique
-  professeur   User      @relation(fields: [professeurId], references: [id])
-  eleves       User[]
+  professeur   User      @relation("ProfesseurClasse", fields: [professeurId], references: [id])
+  eleves       User[]    @relation("ElevesClasse")
   chatroom     Chatroom?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
 }
 
 model Metier {
-  id          String      @id @default(uuid())
-  name        String      @unique
+  id          String      @id @default(cuid())
+  nom         String
   description String
-  theme       Json // Grouping theme properties into a single JSON object
-  eleves      EtatEleve[]
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  theme       Json // Regroupe backgroundColor, backgroundImage, etc.
+  etatsEleves EtatEleve[]
 }
 
 model EtatEleve {
-  id         String  @id @default(uuid())
+  id         String  @id @default(cuid())
   isPunished Boolean @default(false)
   eleveId    String  @unique
   eleve      User    @relation(fields: [eleveId], references: [id])
@@ -55,37 +55,30 @@ model EtatEleve {
 }
 
 model Chatroom {
-  id        String    @id @default(uuid())
+  id        String    @id @default(cuid())
   classeId  String    @unique
   classe    Classe    @relation(fields: [classeId], references: [id])
   messages  Message[]
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
 }
 
 model Message {
-  id          String     @id @default(uuid())
-  content     String
+  id          String     @id @default(cuid())
+  contenu     String
+  timestamp   DateTime   @default(now())
+  auteurId    String
+  auteur      User       @relation(fields: [auteurId], references: [id])
   chatroomId  String
   chatroom    Chatroom   @relation(fields: [chatroomId], references: [id])
-  senderId    String
-  sender      User       @relation(fields: [senderId], references: [id])
   reactions   Reaction[]
-  createdAt   DateTime   @default(now())
 }
 
 model Reaction {
-  id        String  @id @default(uuid())
+  id        String  @id @default(cuid())
   emoji     String
   messageId String
   message   Message @relation(fields: [messageId], references: [id])
-  userId    String
-  user      User    @relation(fields: [userId], references: [id])
+  auteurId  String
+  auteur    User    @relation(fields: [auteurId], references: [id])
 
-  @@unique([messageId, userId, emoji])
-}
-
-enum Role {
-  PROFESSEUR
-  ELEVE
+  @@unique([messageId, auteurId, emoji])
 }
