@@ -1,8 +1,7 @@
-
 datasource db {
-  provider     = "postgres"
-  url          = env("DATABASE_URL")
-  directUrl    = env("DIRECT_URL")
+  provider  = "postgres"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 generator client {
@@ -10,27 +9,27 @@ generator client {
 }
 
 model User {
-  id              String       @id @default(cuid())
-  email           String       @unique
+  id              String     @id @default(cuid())
+  email           String     @unique
   name            String?
-  role            Role         @default(ELEVE)
+  role            Role       @default(ELEVE)
   ambition        String?
-  classeEnseignee Classe?      @relation("ProfesseurToClasse")
-  classe          Classe?      @relation("EleveToClasse", fields: [classeId], references: [id])
+  classeEnseignee Classe?    @relation("ProfesseurToClasse")
+  classe          Classe?    @relation("EleveToClasse", fields: [classeId], references: [id])
   classeId        String?
-  messages        Message[]    @relation("UserToMessage")
+  messages        Message[]  @relation("UserToMessage")
   etat            EtatEleve?
-  reactions       Reaction[]   @relation("UserToReaction")
+  reactions       Reaction[] @relation("UserToReaction")
 }
 
 model Classe {
-  id           String    @id @default(cuid())
+  id           String   @id @default(cuid())
   nom          String
-  professeur   User      @relation("ProfesseurToClasse", fields: [professeurId], references: [id])
-  professeurId String    @unique
-  eleves       User[]    @relation("EleveToClasse")
-  chatroomId   String    @unique @default(cuid())
-  chatroom     Chatroom  @relation(fields: [chatroomId], references: [id])
+  professeur   User     @relation("ProfesseurToClasse", fields: [professeurId], references: [id])
+  professeurId String   @unique
+  eleves       User[]   @relation("EleveToClasse")
+  chatroomId   String   @unique @default(cuid())
+  chatroom     Chatroom @relation(fields: [chatroomId], references: [id])
 }
 
 model Metier {
@@ -57,23 +56,23 @@ model Chatroom {
 }
 
 model Message {
-  id          String     @id @default(cuid())
-  message     String
-  createdAt   DateTime   @default(now())
-  sender      User       @relation("UserToMessage", fields: [senderId], references: [id])
-  senderId    String
-  senderName  String
-  chatroom    Chatroom   @relation(fields: [chatroomId], references: [id])
-  chatroomId  String
-  reactions   Reaction[]
+  id         String     @id @default(cuid())
+  message    String
+  createdAt  DateTime   @default(now())
+  sender     User       @relation("UserToMessage", fields: [senderId], references: [id])
+  senderId   String
+  senderName String
+  chatroom   Chatroom   @relation(fields: [chatroomId], references: [id])
+  chatroomId String
+  reactions  Reaction[]
 }
 
 model Reaction {
-  id        String   @id @default(cuid())
+  id        String  @id @default(cuid())
   emoji     String
-  user      User     @relation("UserToReaction", fields: [userId], references: [id])
+  user      User    @relation("UserToReaction", fields: [userId], references: [id])
   userId    String
-  message   Message  @relation(fields: [messageId], references: [id])
+  message   Message @relation(fields: [messageId], references: [id])
   messageId String
 }
 
