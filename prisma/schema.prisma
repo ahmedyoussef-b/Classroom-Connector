@@ -1,11 +1,32 @@
-// prisma/schema.prisma
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
 datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
 }
 
-generator client {
-  provider = "preview-darts"
+// User model
+model User {
+  id                String    @id @default(cuid())
+  email             String    @unique
+  name              String?
+  role              Role      @default(ELEVE)
+  ambition          String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  classeId          String?
+  classe            Classe?   @relation(fields: [classeId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  sessions          Session[] @relation("SessionParticipants")
+  sessionsCrees     Session[] @relation("SessionTeacher")
+  messages          Message[]
+  reactions         Reaction[]
+  etat              EtatEleve?
+  classesEnseignees Classe[]  @relation("ProfesseurClasses")
 }
 
 enum Role {
@@ -13,42 +34,35 @@ enum Role {
   PROFESSEUR
 }
 
-model User {
-  id                String     @id @default(cuid())
-  email             String     @unique
-  name              String?
-  role              Role       @default(ELEVE)
-  ambition          String?
-  classeId          String?
-  classe            Classe?    @relation(fields: [classeId], references: [id], onDelete: SetNull, onUpdate: Cascade)
-  sessions          Session[]  @relation("SessionParticipants")
-  sessionsCrees     Session[]  @relation("SessionTeacher")
-  messages          Message[]
-  reactions         Reaction[]
-  etat              EtatEleve?
-  createdAt         DateTime   @default(now())
-  updatedAt         DateTime   @updatedAt
-  classesEnseignees Classe[]   @relation("ProfesseurClasses")
-}
-
+// Class model
 model Classe {
   id           String    @id @default(cuid())
   nom          String
   professeur   User      @relation("ProfesseurClasses", fields: [professeurId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   professeurId String
   eleves       User[]
-  chatroomId   String    @unique
-  chatroom     Chatroom  @relation(fields: [chatroomId], references: [id])
+  chatroom     Chatroom? @relation(fields: [chatroomId], references: [id])
+  chatroomId   String?   @unique
   createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @default(now()) @updatedAt
+  updatedAt    DateTime  @updatedAt
 }
 
-model Chatroom {
-  id        String    @id @default(cuid())
-  messages  Message[]
-  classe    Classe?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @default(now()) @updatedAt
+model Metier {
+  id          String      @id @default(cuid())
+  nom         String
+  description String
+  icon        String?
+  theme       Json
+  etats       EtatEleve[]
+}
+
+model EtatEleve {
+  id         String  @id @default(cuid())
+  eleve      User    @relation(fields: [eleveId], references: [id], onDelete: Cascade)
+  eleveId    String  @unique
+  metier     Metier? @relation(fields: [metierId], references: [id])
+  metierId   String?
+  isPunished Boolean @default(false)
 }
 
 model Session {
@@ -60,22 +74,12 @@ model Session {
   participants User[]   @relation("SessionParticipants")
 }
 
-model EtatEleve {
-  id         String  @id @default(cuid())
-  eleve      User    @relation(fields: [eleveId], references: [id])
-  eleveId    String  @unique
-  isPunished Boolean @default(false)
-  metier     Metier? @relation(fields: [metierId], references: [id])
-  metierId   String?
-}
-
-model Metier {
-  id          String      @id @default(cuid())
-  nom         String
-  description String
-  icon        String
-  theme       Json
-  eleves      EtatEleve[]
+model Chatroom {
+  id        String    @id @default(cuid())
+  classe    Classe?
+  messages  Message[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 }
 
 model Message {
@@ -98,4 +102,6 @@ model Reaction {
   message   Message  @relation(fields: [messageId], references: [id])
   messageId String
   createdAt DateTime @default(now())
+
+  @@unique([userId, messageId, emoji])
 }
