@@ -11,7 +11,7 @@ import { setStudentCareer, togglePunishment } from '@/lib/actions';
 import { ArrowLeft, User, Briefcase, Zap, FileUp } from 'lucide-react';
 import Link from 'next/link';
 
-export default async function StudentAdminPage({ params }: { params: { id: string } }) {
+export default async function StudentAdminPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: studentId } = await params;
 
   const [student, metiers] = await Promise.all([
