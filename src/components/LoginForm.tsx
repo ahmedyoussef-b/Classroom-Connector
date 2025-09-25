@@ -43,7 +43,7 @@ export function LoginForm({ initialEmail = '', emailPlaceholder = 'votre@email.c
       if (studentIdMatch) {
           router.push(`/student/${studentIdMatch[1]}`);
       } else {
-          // Default to student 1 if format is generic
+          // Default to student 1 if format is generic like student@example.com
           router.push('/student/1');
       }
     } else {

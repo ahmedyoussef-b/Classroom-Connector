@@ -4,8 +4,9 @@
 import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { LoginForm } from '@/components/LoginForm';
-import { School } from 'lucide-react';
+import { School, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 
 function LoginPageContent() {
   const searchParams = useSearchParams();
@@ -15,7 +16,13 @@ function LoginPageContent() {
   const placeholder = role === 'student' ? 'student@example.com' : 'teacher@example.com';
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4 relative">
+        <Button variant="outline" asChild className="absolute top-4 left-4">
+            <Link href="/">
+                <ArrowLeft />
+                Retour
+            </Link>
+        </Button>
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
             <Link href="/" className="flex justify-center items-center gap-2 mb-4 text-primary hover:opacity-80 transition-opacity">
