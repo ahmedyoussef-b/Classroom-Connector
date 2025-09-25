@@ -8,18 +8,28 @@ import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ArrowLeft, Video } from 'lucide-react';
-import type { User, EtatEleve, Metier } from '@prisma/client';
+import type { Metier } from '@prisma/client';
+
+// Définir un type simple et sérialisable pour les élèves
+type SimpleStudent = {
+  id: string;
+  name: string | null;
+  etat: {
+    isPunished: boolean;
+  } | null;
+  isConnected: boolean;
+};
 
 interface ClassPageClientProps {
     classe: {
         id: string;
         nom: string;
-        eleves: (User & { etat: EtatEleve | null, isConnected: boolean })[];
+        eleves: SimpleStudent[];
     };
     metiers: Metier[];
 }
 
-export default function ClassPageClient({ classe }: ClassPageClientProps) {
+export default function ClassPageClient({ classe, metiers }: ClassPageClientProps) {
   const [selectedStudents, setSelectedStudents] = useState<Set<string>>(new Set());
   const router = useRouter();
 

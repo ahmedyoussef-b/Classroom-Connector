@@ -1,8 +1,7 @@
 
 "use client";
 
-import type { User, EtatEleve } from '@prisma/client';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './ui/card';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Avatar, AvatarFallback } from './ui/avatar';
 import Link from 'next/link';
@@ -10,8 +9,16 @@ import { cn } from '@/lib/utils';
 import { useTransition } from 'react';
 import { Checkbox } from './ui/checkbox';
 
+// Utiliser un type simple pour les props de l'élève
 interface StudentCardProps {
-  student: User & { etat: EtatEleve | null, isConnected?: boolean };
+  student: {
+    id: string;
+    name: string | null;
+    etat: {
+      isPunished: boolean;
+    } | null;
+    isConnected?: boolean;
+  };
   isSelected: boolean;
   onSelectionChange: (studentId: string, isSelected: boolean) => void;
 }
@@ -63,4 +70,3 @@ export function StudentCard({ student, isSelected, onSelectionChange }: StudentC
     </Card>
   );
 }
-
