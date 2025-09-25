@@ -1,156 +1,111 @@
 // src/app/student/[id]/page.tsx
 import { Header } from '@/components/Header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { Button } from '@/components/ui/button';
 import prisma from '@/lib/prisma';
 import { notFound } from 'next/navigation';
-import { setStudentCareer, togglePunishment } from '@/lib/actions';
-import { ArrowLeft, User, Briefcase, Zap, FileUp } from 'lucide-react';
+import { User, Lightbulb, GraduationCap } from 'lucide-react';
+import { CareerThemeWrapper } from '@/components/CareerThemeWrapper';
+import { PersonalizedContent } from '@/components/PersonalizedContent';
+import { StudentWithStateAndCareer } from '@/lib/types';
 import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 
-export default async function StudentAdminPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id: studentId } = await params;
-
-  const [student, metiers] = await Promise.all([
-    prisma.user.findUnique({
-      where: { id: studentId, role: 'ELEVE' },
+async function getStudentData(id: string): Promise<StudentWithStateAndCareer | null> {
+    const student = await prisma.user.findUnique({
+      where: { id, role: 'ELEVE' },
       include: {
-        etat: true,
+        etat: {
+          include: {
+            metier: true
+          }
+        },
         classe: true
       }
-    }),
-    prisma.metier.findMany()
-  ]);
+    });
+
+    // If student is punished, don't return the career theme
+    if (student?.etat?.isPunished && student.etat.metier) {
+        // Create a new object to avoid modifying the cached one
+        const studentWithoutTheme: StudentWithStateAndCareer = {
+            ...student,
+            etat: {
+                ...student.etat,
+                metier: null
+            }
+        };
+        return studentWithoutTheme;
+    }
+
+    return student;
+}
+
+
+export default async function StudentPage({ params }: { params: { id: string } }) {
+  await params;
+  const student = await getStudentData(params.id);
 
   if (!student) {
     notFound();
   }
-  
-  const studentState = student.etat;
-  const isPunished = studentState?.isPunished ?? false;
 
-  const setCareerAction = setStudentCareer.bind(null, student.id);
-  const togglePunishmentAction = togglePunishment.bind(null, student.id);
+  const career = student.etat?.metier;
 
   return (
-    <div className="flex flex-col min-h-screen bg-muted/40">
-      <Header />
-      <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow">
-        <div className="max-w-4xl mx-auto">
-          <div className="mb-6 flex items-center gap-4">
-            {student.classe && (
-                 <Button variant="outline" size="icon" asChild>
-                    <Link href={`/teacher/class/${student.classe.id}`}>
-                        <ArrowLeft />
-                        <span className="sr-only">Retour à la classe</span>
-                    </Link>
-                </Button>
-            )}
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">Gestion de l'élève</h1>
-              <p className="text-muted-foreground">Modifier les propriétés et le statut de {student.name}.</p>
-            </div>
-          </div>
-          
-          <div className="grid gap-8">
-            <Card>
+    <CareerThemeWrapper career={career ?? undefined}>
+      <div className="flex flex-col min-h-screen">
+        <Header />
+        <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow">
+          <div className="max-w-4xl mx-auto">
+            <Card className="bg-background/80 backdrop-blur-sm mb-8">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                    <User />
-                    Profil de l'élève
-                </CardTitle>
-                <CardDescription>Informations de base et ambition de l'élève.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                  <div className='grid grid-cols-2 gap-4'>
-                    <div>
-                        <Label>Prénom</Label>
-                        <p className="font-semibold text-lg">{student.name}</p>
-                    </div>
-                    <div>
-                        <Label>Classe</Label>
-                        <p className="font-semibold text-lg">{student.classe?.nom ?? 'N/A'}</p>
-                    </div>
-                  </div>
+                <div className="flex items-center gap-4">
+                  <Avatar className="h-16 w-16 border-2 border-primary">
+                    <AvatarFallback className="text-3xl bg-background">
+                      {student.name?.charAt(0)}
+                    </AvatarFallback>
+                  </Avatar>
                   <div>
-                    <Label>Ambition déclarée</Label>
-                    <p className="text-muted-foreground italic">"{student.ambition}"</p>
+                    <CardTitle className="text-3xl">Bonjour, {student.name}!</CardTitle>
+                    <CardDescription className="text-lg">Bienvenue sur votre tableau de bord.</CardDescription>
                   </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-2 text-muted-foreground">
+                    <Lightbulb className="h-5 w-5 text-accent" />
+                    <p>Votre ambition : <span className="font-semibold italic text-foreground">"{student.ambition}"</span></p>
+                </div>
+                {career && (
+                    <div className="flex items-center gap-2 text-muted-foreground mt-2">
+                        <GraduationCap className="h-5 w-5 text-primary" />
+                        <p>Votre métier exploré : <span className="font-semibold text-foreground">{career.nom}</span></p>
+                    </div>
+                )}
+                 {student.classe && (
+                    <div className="mt-4">
+                        <Button asChild>
+                            <Link href={`/teacher/class/${student.classe.id}`}>
+                                Voir ma classe
+                            </Link>
+                        </Button>
+                    </div>
+                )}
               </CardContent>
             </Card>
-
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <Briefcase />
-                        Assigner un métier
-                    </CardTitle>
-                    <CardDescription>Choisir un thème de carrière pour l'élève. Cela changera son environnement visuel.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <form action={setCareerAction}>
-                        <div className="flex items-end gap-4">
-                            <div className='flex-grow'>
-                                <Label htmlFor="career-select">Métier</Label>
-                                <Select name="careerId" defaultValue={studentState?.metierId ?? 'none'}>
-                                    <SelectTrigger id="career-select">
-                                        <SelectValue placeholder="Choisir un métier..." />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="none">Aucun</SelectItem>
-                                        {metiers.map(metier => (
-                                            <SelectItem key={metier.id} value={metier.id}>{metier.nom}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <Button type="submit">Appliquer</Button>
-                        </div>
-                    </form>
-                </CardContent>
-            </Card>
-
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-amber-600">
-                        <Zap />
-                        Actions disciplinaires
-                    </CardTitle>
-                    <CardDescription>Activer le mode "puni" pour désactiver le thème de l'élève.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <form action={togglePunishmentAction}>
-                        <div className="flex items-center justify-between p-4 border rounded-lg">
-                            <Label htmlFor="punishment-switch" className="font-medium">
-                                Mode Puni
-                            </Label>
-                            <Switch id="punishment-switch" name="isPunished" defaultChecked={isPunished} type="submit" />
-                        </div>
-                    </form>
-                </CardContent>
-            </Card>
-
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <FileUp />
-                        Envoyer des documents
-                    </CardTitle>
-                    <CardDescription>Partager des fichiers ou des ressources avec l'élève.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="flex items-center justify-center p-8 border-2 border-dashed rounded-lg">
-                        <p className="text-muted-foreground">Fonctionnalité à venir...</p>
-                    </div>
-                </CardContent>
-            </Card>
+            
+            <PersonalizedContent student={student} />
 
           </div>
-        </div>
-      </main>
-    </div>
+        </main>
+      </div>
+    </CareerThemeWrapper>
   );
+}
+
+// Minimal Avatar component for this page
+function Avatar({ children, className }: { children: React.ReactNode, className?: string }) {
+    return <div className={`relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full ${className}`}>{children}</div>
+}
+function AvatarFallback({ children, className }: { children: React.ReactNode, className?: string }) {
+    return <span className={`flex h-full w-full items-center justify-center rounded-full bg-muted ${className}`}>{children}</span>
 }
