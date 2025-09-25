@@ -5,7 +5,7 @@ import { Header } from '@/components/Header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import prisma from '@/lib/prisma';
 import { notFound } from 'next/navigation';
-import { User, Lightbulb, GraduationCap, FileUp, Video } from 'lucide-react';
+import { User, Lightbulb, GraduationCap, FileUp, Video, Sparkles } from 'lucide-react';
 import { CareerThemeWrapper } from '@/components/CareerThemeWrapper';
 import { PersonalizedContent } from '@/components/PersonalizedContent';
 import { StudentWithStateAndCareer } from '@/lib/types';
@@ -81,8 +81,9 @@ export default async function StudentPage({ params, searchParams }: { params: { 
             <BackButton />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl mx-auto">
-            <div className="md:col-span-1">
-              <Card className="bg-background/80 backdrop-blur-sm mb-8">
+            {/* Colonne de gauche */}
+            <div className="md:col-span-1 flex flex-col gap-8">
+              <Card className="bg-background/80 backdrop-blur-sm">
                 <CardHeader>
                   <div className="flex items-center gap-4">
                     <Avatar className="h-16 w-16 border-2 border-primary">
@@ -121,11 +122,21 @@ export default async function StudentPage({ params, searchParams }: { params: { 
                   )}
                 </CardContent>
               </Card>
-
-              <PersonalizedContent student={student} />
             </div>
 
-            <div className="md:col-span-1 space-y-8">
+            {/* Colonne de droite */}
+            <div className="md:col-span-1 flex flex-col gap-8">
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                           <Sparkles />
+                           Votre parcours personnalisé
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <PersonalizedContent student={student} />
+                    </CardContent>
+                </Card>
                 <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
@@ -170,4 +181,3 @@ export default async function StudentPage({ params, searchParams }: { params: { 
     </CareerThemeWrapper>
   );
 }
-
