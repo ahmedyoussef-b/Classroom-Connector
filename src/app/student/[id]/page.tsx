@@ -10,6 +10,7 @@ import { StudentWithStateAndCareer } from '@/lib/types';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { BackButton } from '@/components/BackButton';
 
 async function getStudentData(id: string): Promise<StudentWithStateAndCareer | null> {
     const student = await prisma.user.findUnique({
@@ -24,8 +25,10 @@ async function getStudentData(id: string): Promise<StudentWithStateAndCareer | n
       }
     });
 
+    if (!student) return null;
+
     // If student is punished, don't return the career theme
-    if (student?.etat?.isPunished && student.etat.metier) {
+    if (student.etat?.isPunished && student.etat.metier) {
         // Create a new object to avoid modifying the cached one
         const studentWithoutTheme: StudentWithStateAndCareer = {
             ...student,
@@ -55,6 +58,9 @@ export default async function StudentPage({ params }: { params: { id:string } })
       <div className="flex flex-col min-h-screen">
         <Header />
         <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow">
+          <div className="flex items-center gap-4 mb-8">
+            <BackButton />
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl mx-auto">
             <div className="md:col-span-1">
               <Card className="bg-background/80 backdrop-blur-sm mb-8">
