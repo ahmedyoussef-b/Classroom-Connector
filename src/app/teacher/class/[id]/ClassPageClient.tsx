@@ -1,15 +1,17 @@
 // src/app/teacher/class/[id]/ClassPageClient.tsx
 "use client";
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { StudentCard } from '@/components/StudentCard';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowLeft, Video } from 'lucide-react';
-import type { Metier, User } from '@prisma/client';
+import { ArrowLeft, Loader2, Video } from 'lucide-react';
+import type { User } from '@prisma/client';
 import { AddStudentForm } from '@/components/AddStudentForm';
+import { createSession } from '@/lib/actions';
+import { useToast } from '@/hooks/use-toast';
 
 // Définir un type simple et sérialisable pour les élèves
 type SimpleStudent = {
@@ -27,13 +29,14 @@ interface ClassPageClientProps {
         nom: string;
         eleves: SimpleStudent[];
     };
-    metiers: Metier[];
     teacher: User;
 }
 
-export default function ClassPageClient({ classe, metiers, teacher }: ClassPageClientProps) {
+export default function ClassPageClient({ classe, teacher }: ClassPageClientProps) {
   const [selectedStudents, setSelectedStudents] = useState<Set<string>>(new Set());
+  const [isStartingSession, startSessionTransition] = useTransition();
   const router = useRouter();
+  const { toast } = useToast();
 
   const handleSelectionChange = (studentId: string, isSelected: boolean) => {
     setSelectedStudents(prev => {
@@ -50,11 +53,25 @@ export default function ClassPageClient({ classe, metiers, teacher }: ClassPageC
   const selectedCount = selectedStudents.size;
 
   const handleStartSession = () => {
-    if (selectedCount > 0) {
-      const studentIds = Array.from(selectedStudents).join(',');
-      const sessionId = `session-${Date.now()}`;
-      router.push(`/session/${sessionId}?role=teacher&students=${studentIds}`);
-    }
+    if (selectedCount === 0) return;
+
+    startSessionTransition(async () => {
+      try {
+        const studentIds = Array.from(selectedStudents);
+        const session = await createSession(teacher.id, studentIds);
+        toast({
+          title: "Session créée !",
+          description: `La session a été démarrée avec ${selectedCount} élève(s).`,
+        });
+        router.push(`/session/${session.id}?role=teacher&students=${studentIds.join(',')}`);
+      } catch (error) {
+        toast({
+          variant: 'destructive',
+          title: 'Erreur',
+          description: 'Impossible de démarrer la session.',
+        });
+      }
+    });
   };
 
   return (
@@ -77,9 +94,17 @@ export default function ClassPageClient({ classe, metiers, teacher }: ClassPageC
             <div className="flex items-center gap-2">
                 <AddStudentForm classeId={classe.id} />
                 {selectedCount > 0 && (
-                    <Button onClick={handleStartSession} className="transition-all animate-in fade-in zoom-in-95">
-                    <Video className="mr-2 h-4 w-4" />
-                    Démarrer une session ({selectedCount})
+                    <Button 
+                      onClick={handleStartSession} 
+                      disabled={isStartingSession}
+                      className="transition-all animate-in fade-in zoom-in-95"
+                    >
+                      {isStartingSession ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Video className="mr-2 h-4 w-4" />
+                      )}
+                      Démarrer une session ({selectedCount})
                     </Button>
                 )}
           </div>

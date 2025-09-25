@@ -156,3 +156,19 @@ export async function getStudentByEmail(email: string) {
         },
     });
 }
+
+export async function createSession(professeurId: string, studentIds: string[]) {
+    const session = await prisma.session.create({
+        data: {
+            professeurId,
+            participants: {
+                connect: studentIds.map(id => ({ id }))
+            }
+        }
+    });
+
+    revalidatePath('/teacher/class/[id]', 'layout');
+    studentIds.forEach(id => revalidatePath(`/student/${id}`));
+
+    return session;
+}

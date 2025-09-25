@@ -24,7 +24,16 @@ async function getStudentData(id: string): Promise<StudentWithStateAndCareer | n
             metier: true
           }
         },
-        classe: true
+        classe: true,
+        sessions: {
+          where: {
+            endedAt: null
+          },
+          orderBy: {
+            createdAt: 'desc'
+          },
+          take: 1
+        }
       }
     });
 
@@ -67,7 +76,7 @@ export default async function StudentPage({ params, searchParams }: { params: { 
 
   const ambitionIcon = career ? <GraduationCap className="h-5 w-5 text-primary" /> : <Lightbulb className="h-5 w-5 text-accent" />;
   
-  const sessionId = `live-session-${Date.now()}`;
+  const activeSession = (student as any).sessions?.[0];
   const teacher = isTeacherView ? await prisma.user.findUnique({ where: {id: 'teacher-id'}}) : null;
 
 
@@ -132,24 +141,26 @@ export default async function StudentPage({ params, searchParams }: { params: { 
                     </CardContent>
                 </Card>
                 
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                           <Video />
-                           Session en direct
-                        </CardTitle>
-                        <CardDescription>
-                            Votre professeur vous a invité à une session vidéo.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                       <Button asChild className="w-full">
-                           <Link href={`/session/${sessionId}?role=student&studentId=${student.id}`}>
-                               Rejoindre la session
-                           </Link>
-                       </Button>
-                    </CardContent>
-                </Card>
+                {activeSession && (
+                  <Card>
+                      <CardHeader>
+                          <CardTitle className="flex items-center gap-2">
+                            <Video />
+                            Session en direct
+                          </CardTitle>
+                          <CardDescription>
+                              Votre professeur vous a invité à une session vidéo.
+                          </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <Button asChild className="w-full">
+                            <Link href={`/session/${activeSession.id}?role=student&studentId=${student.id}`}>
+                                Rejoindre la session
+                            </Link>
+                        </Button>
+                      </CardContent>
+                  </Card>
+                )}
                 
                 <Card>
                     <CardHeader>

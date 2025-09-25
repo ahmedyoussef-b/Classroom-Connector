@@ -46,7 +46,6 @@ export default async function ClassPage({ params }: { params: { id: string } }) 
           isConnected: e.isConnected
       })),
     },
-    // We don't need to pass metiers anymore as it's fetched where it's used
     teacher,
   };
 
