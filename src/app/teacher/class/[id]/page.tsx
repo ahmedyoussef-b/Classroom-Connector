@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useMemo } from 'react';
@@ -17,31 +18,42 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+} from "@/components/ui/alert-dialog";
+import prisma from '@/lib/prisma';
+import { notFound } from 'next/navigation';
 
 
 // This is a server component that fetches data
-export default function ClassPageWrapper({ params }: { params: { id: string } }) {
-  // In a real app, you would fetch this data using an API route or a server action
-  // For now, we simulate fetching initial data.
-  const classe = {
-    id: params.id,
-    nom: 'Classe A',
-    eleves: [
-      { id: '1', name: 'Alice', ambition: 'devenir pompier', etat: { metierId: 'pompier-id', isPunished: false, eleveId: '1' }, isConnected: true },
-      { id: '2', name: 'Bob', ambition: 'explorer Mars', etat: { metierId: 'astronaute-id', isPunished: false, eleveId: '2' }, isConnected: false },
-      { id: '3', name: 'Charlie', ambition: 'soigner les animaux', etat: { metierId: 'veterinaire-id', isPunished: false, eleveId: '3' }, isConnected: true },
-      { id: '4', name: 'Diana', ambition: "être une artiste célèbre", etat: { metierId: null, isPunished: false, eleveId: '4' }, isConnected: false },
-    ],
-  };
+export default async function ClassPageWrapper({ params }: { params: { id: string } }) {
+  const classeId = params.id;
 
-  const metiers = [
-      { id: 'pompier-id', nom: 'Pompier', description: 'Protège les personnes et les biens des incendies.', theme: {} },
-      { id: 'astronaute-id', nom: 'Astronaute', description: "Explore l'espace et voyage vers d'autres planètes.", theme: {} },
-      { id: 'veterinaire-id', nom: 'Vétérinaire', description: 'Soigne les animaux malades et blessés.', theme: {} },
-  ];
+  const classe = await prisma.classe.findUnique({
+    where: { id: classeId },
+    include: {
+      eleves: {
+        include: {
+          etat: true
+        }
+      }
+    }
+  });
 
-  return <ClassPageClient classe={classe as any} metiers={metiers as any} />;
+  if (!classe) {
+    notFound();
+  }
+
+  const metiers = await prisma.metier.findMany();
+
+  // Simulate connection status for demonstration
+  const elevesWithConnection = classe.eleves.map((eleve, index) => ({
+    ...eleve,
+    isConnected: index % 2 === 0, // Alternate connected status
+  }));
+  
+  const classeWithConnection = { ...classe, eleves: elevesWithConnection };
+
+
+  return <ClassPageClient classe={classeWithConnection as any} metiers={metiers as any} />;
 }
 
 
