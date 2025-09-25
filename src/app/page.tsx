@@ -1,28 +1,84 @@
-import { LoginForm } from '@/components/LoginForm';
-import { School } from 'lucide-react';
+// src/app/page.tsx
+import { Header } from '@/components/Header';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ArrowRight, BookOpen, UserCheck } from 'lucide-react';
+import Link from 'next/link';
 
-export default function Home() {
+export default function HomePage() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-            <div className="flex justify-center items-center gap-2 mb-4">
-                 <School className="h-10 w-10 text-primary" />
-                 <h1 className="text-4xl font-extrabold tracking-tight text-primary">
-                    Classroom Connector
-                </h1>
-            </div>
-          <p className="text-lg text-muted-foreground">
-            Connectez-vous pour commencer.
+    <div className="flex flex-col min-h-screen bg-background">
+      <Header />
+      <main className="flex-grow">
+        {/* Hero Section */}
+        <section className="container mx-auto px-4 py-20 sm:py-32 text-center">
+          <h1 className="text-4xl font-extrabold tracking-tight lg:text-6xl text-primary">
+            Classroom Connector
+          </h1>
+          <p className="mt-6 max-w-2xl mx-auto text-lg text-muted-foreground">
+            Une plateforme innovante pour connecter professeurs et élèves, personnaliser l'apprentissage et explorer des futurs passionnants.
           </p>
-        </div>
-        
-        <LoginForm />
+          <div className="mt-8 flex justify-center gap-4">
+            <Button size="lg" asChild>
+              <Link href="/login">
+                Espace Professeur <ArrowRight className="ml-2" />
+              </Link>
+            </Button>
+            <Button size="lg" variant="secondary" asChild>
+              <Link href="/login">
+                Espace Élève <ArrowRight className="ml-2" />
+              </Link>
+            </Button>
+          </div>
+        </section>
 
-      </div>
-       <footer className="mt-20 text-center text-muted-foreground">
-        <p>Built with Next.js, Tailwind CSS, and Shadcn UI.</p>
-        <p>A new way to experience the classroom.</p>
+        {/* Features Section */}
+        <section className="bg-muted py-20">
+          <div className="container mx-auto px-4">
+            <h2 className="text-3xl font-bold text-center mb-12">Fonctionnalités Clés</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <Card>
+                <CardHeader className="flex items-center gap-4">
+                  <div className="p-3 bg-primary/10 rounded-full">
+                    <UserCheck className="h-6 w-6 text-primary" />
+                  </div>
+                  <CardTitle>Tableaux de Bord par Rôle</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p>Des interfaces distinctes et optimisées pour les professeurs et les élèves, offrant les outils adaptés à chaque besoin.</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="flex items-center gap-4">
+                   <div className="p-3 bg-accent/10 rounded-full">
+                    <BookOpen className="h-6 w-6 text-accent" />
+                  </div>
+                  <CardTitle>Librairie de Métiers</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p>Un catalogue de carrières avec des thèmes visuels uniques pour inspirer les élèves et personnaliser leur environnement d'apprentissage.</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="flex items-center gap-4">
+                   <div className="p-3 bg-destructive/10 rounded-full">
+                    <ArrowRight className="h-6 w-6 text-destructive" />
+                  </div>
+                  <CardTitle>Sessions Interactives</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p>Lancez des sessions vidéo en direct avec un ou plusieurs élèves pour un enseignement ciblé et un support en temps réel.</p>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer className="py-6 border-t">
+        <div className="container mx-auto px-4 text-center text-muted-foreground">
+          <p>&copy; {new Date().getFullYear()} Classroom Connector. Tous droits réservés.</p>
+        </div>
       </footer>
     </div>
   );
