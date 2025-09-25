@@ -167,7 +167,7 @@ export default async function StudentPage({ params, searchParams }: { params: { 
                         <CardTitle className="flex items-center gap-2">
                             <FileUp />
                             Soumettre un devoir
-                        </CardTitle>
+                        </Title>
                         <CardDescription>
                             Importez votre travail pour que votre professeur puisse le consulter.
                         </CardDescription>
