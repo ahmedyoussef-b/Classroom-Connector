@@ -5,15 +5,9 @@ import type { Metier } from '@prisma/client';
 import type { LucideIcon } from 'lucide-react';
 import React from 'react';
 
-type CareerWithIcon = Omit<Metier, 'theme'> & {
-    theme: {
-        icon: LucideIcon;
-        [key: string]: any;
-    }
-}
-
+// Career prop doesn't contain non-serializable data anymore
 interface CareerThemeWrapperProps {
-  career?: CareerWithIcon;
+  career?: Metier;
   children: React.ReactNode;
 }
 

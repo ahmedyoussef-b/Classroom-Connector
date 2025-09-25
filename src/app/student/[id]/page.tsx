@@ -7,9 +7,6 @@ import prisma from '@/lib/prisma';
 import { notFound } from 'next/navigation';
 import type { Metier } from '@prisma/client';
 
-// We need to re-import an icon here as Lucide icons cannot be passed from server to client components
-import { BookOpen } from 'lucide-react';
-
 export default async function StudentPage({ params }: { params: { id: string } }) {
   const studentId = params.id;
 
@@ -31,18 +28,6 @@ export default async function StudentPage({ params }: { params: { id: string } }
   const state = student.etat;
   const career = student.etat?.metier;
   
-  // A bit of a hack because we can't pass Lucide icons from server to client.
-  // We'll pass the theme object and reconstruct the Icon on the client.
-  // In a real app, we might have a mapping of icon names to components.
-  const careerWithTheme = career ? {
-      ...career,
-      theme: {
-          ...career.theme as any,
-          icon: BookOpen
-      }
-  } : undefined;
-
-
   const isPunished = state?.isPunished ?? false;
 
   const content = (
@@ -81,7 +66,7 @@ export default async function StudentPage({ params }: { params: { id: string } }
   );
 
   return (
-    <CareerThemeWrapper career={!isPunished ? careerWithTheme : undefined}>
+    <CareerThemeWrapper career={!isPunished ? career : undefined}>
       <div className="flex flex-col min-h-screen">
         <Header />
         <main className="flex-grow flex items-center justify-center">
