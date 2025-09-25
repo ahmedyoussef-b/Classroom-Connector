@@ -4,8 +4,8 @@ import { notFound } from 'next/navigation';
 import ClassPageClient from './ClassPageClient';
 import type { Metier } from '@prisma/client';
 
-export default async function ClassPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id: classeId } = await params;
+export default async function ClassPage({ params }: { params: { id: string } }) {
+  const { id: classeId } = params;
 
   const [classe, metiers] = await Promise.all([
     prisma.classe.findUnique({
