@@ -59,6 +59,15 @@ export default async function StudentPage({ params, searchParams }: { params: { 
 
   const career = student.etat?.metier;
   const allCareers = isTeacherView ? await prisma.metier.findMany() : [];
+  
+  const ambitionOrCareerText = career ? (
+    <>Votre métier exploré : <span className="font-semibold text-foreground">{career.nom}</span></>
+  ) : (
+    <>Votre ambition : <span className="font-semibold italic text-foreground">"{student.ambition}"</span></>
+  );
+
+  const ambitionIcon = career ? <GraduationCap className="h-5 w-5 text-primary" /> : <Lightbulb className="h-5 w-5 text-accent" />;
+
 
   return (
     <CareerThemeWrapper career={career ?? undefined}>
@@ -86,26 +95,19 @@ export default async function StudentPage({ params, searchParams }: { params: { 
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center gap-2 text-muted-foreground">
-                      <Lightbulb className="h-5 w-5 text-accent" />
-                      <p>Votre ambition : <span className="font-semibold italic text-foreground">"{student.ambition}"</span></p>
+                      {ambitionIcon}
+                      <p>{ambitionOrCareerText}</p>
                   </div>
                     
-                    {isTeacherView ? (
+                    {isTeacherView && (
                         <TeacherCareerSelector 
                             studentId={student.id} 
                             careers={allCareers} 
                             currentCareerId={career?.id} 
                         />
-                    ) : (
-                        career && (
-                            <div className="flex items-center gap-2 text-muted-foreground mt-2">
-                                <GraduationCap className="h-5 w-5 text-primary" />
-                                <p>Votre métier exploré : <span className="font-semibold text-foreground">{career.nom}</span></p>
-                            </div>
-                        )
                     )}
                    
-                   {student.classe && (
+                   {student.classe && !isTeacherView && (
                       <div className="mt-4">
                           <Button asChild>
                               <Link href={`/teacher/class/${student.classe.id}`}>

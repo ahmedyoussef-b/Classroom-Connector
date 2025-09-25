@@ -1,7 +1,8 @@
 // src/components/TeacherCareerSelector.tsx
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Select,
   SelectContent,
@@ -26,10 +27,13 @@ export function TeacherCareerSelector({
   currentCareerId,
 }: TeacherCareerSelectorProps) {
   const [isPending, startTransition] = useTransition();
+  const router = useRouter();
 
   const handleCareerChange = (newCareerId: string) => {
     startTransition(() => {
-      setStudentCareer(studentId, newCareerId === 'none' ? null : newCareerId);
+      setStudentCareer(studentId, newCareerId === 'none' ? null : newCareerId).then(() => {
+        router.refresh();
+      });
     });
   };
 
