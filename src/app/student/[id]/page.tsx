@@ -42,7 +42,6 @@ async function getStudentData(id: string): Promise<StudentWithStateAndCareer | n
 
 
 export default async function StudentPage({ params }: { params: { id:string } }) {
-  await params;
   const student = await getStudentData(params.id);
 
   if (!student) {
