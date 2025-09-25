@@ -8,7 +8,7 @@ import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ArrowLeft, Video } from 'lucide-react';
-import type { User, EtatEleve, Metier } from '@prisma/client';
+import type { User, EtatEleve } from '@prisma/client';
 
 interface ClassPageClientProps {
     classe: {
@@ -16,10 +16,9 @@ interface ClassPageClientProps {
         nom: string;
         eleves: (User & { etat: EtatEleve | null, isConnected: boolean })[];
     };
-    metiers: Metier[];
 }
 
-export default function ClassPageClient({ classe, metiers }: ClassPageClientProps) {
+export default function ClassPageClient({ classe }: ClassPageClientProps) {
   const [selectedStudents, setSelectedStudents] = useState<Set<string>>(new Set());
   const router = useRouter();
 
@@ -84,3 +83,5 @@ export default function ClassPageClient({ classe, metiers }: ClassPageClientProp
     </>
   );
 }
+
+    
