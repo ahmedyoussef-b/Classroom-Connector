@@ -1,11 +1,9 @@
-
-
 // src/app/student/[id]/page.tsx
 import { Header } from '@/components/Header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import prisma from '@/lib/prisma';
 import { notFound } from 'next/navigation';
-import { User, Lightbulb, GraduationCap, FileUp, Video, Sparkles } from 'lucide-react';
+import { Lightbulb, GraduationCap, FileUp, Video, Sparkles } from 'lucide-react';
 import { CareerThemeWrapper } from '@/components/CareerThemeWrapper';
 import { PersonalizedContent } from '@/components/PersonalizedContent';
 import { StudentWithStateAndCareer } from '@/lib/types';
@@ -70,18 +68,19 @@ export default async function StudentPage({ params, searchParams }: { params: { 
   const ambitionIcon = career ? <GraduationCap className="h-5 w-5 text-primary" /> : <Lightbulb className="h-5 w-5 text-accent" />;
   
   const sessionId = `live-session-${Date.now()}`;
+  const teacher = isTeacherView ? await prisma.user.findUnique({ where: {id: 'teacher-id'}}) : null;
 
 
   return (
     <CareerThemeWrapper career={career ?? undefined}>
       <div className="flex flex-col min-h-screen">
-        <Header />
+        <Header user={isTeacherView ? teacher : student} />
         <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow">
           <div className="flex items-center gap-4 mb-8">
             <BackButton />
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl mx-auto">
-              <Card className="bg-background/80 backdrop-blur-sm">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <Card className="bg-background/80 backdrop-blur-sm md:col-span-2">
                 <CardHeader>
                   <div className="flex items-center gap-4">
                     <Avatar className="h-16 w-16 border-2 border-primary">

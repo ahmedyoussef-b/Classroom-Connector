@@ -2,12 +2,11 @@
 import prisma from '@/lib/prisma';
 import { notFound } from 'next/navigation';
 import ClassPageClient from './ClassPageClient';
-import type { Metier } from '@prisma/client';
 
 export default async function ClassPage({ params }: { params: { id: string } }) {
   const classeId = params.id;
 
-  const [classe, metiers] = await Promise.all([
+  const [classe, teacher] = await Promise.all([
     prisma.classe.findUnique({
       where: { id: classeId },
       include: {
@@ -19,10 +18,12 @@ export default async function ClassPage({ params }: { params: { id: string } }) 
         },
       },
     }),
-    prisma.metier.findMany()
+    prisma.user.findUnique({
+        where: { id: 'teacher-id' }
+    })
   ]);
 
-  if (!classe) {
+  if (!classe || !teacher) {
     notFound();
   }
   
@@ -45,7 +46,8 @@ export default async function ClassPage({ params }: { params: { id: string } }) 
           isConnected: e.isConnected
       })),
     },
-    metiers,
+    // We don't need to pass metiers anymore as it's fetched where it's used
+    teacher,
   };
 
 

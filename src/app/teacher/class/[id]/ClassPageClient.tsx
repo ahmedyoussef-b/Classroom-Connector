@@ -7,8 +7,8 @@ import { StudentCard } from '@/components/StudentCard';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowLeft, Video, UserPlus } from 'lucide-react';
-import type { Metier } from '@prisma/client';
+import { ArrowLeft, Video } from 'lucide-react';
+import type { Metier, User } from '@prisma/client';
 import { AddStudentForm } from '@/components/AddStudentForm';
 
 // Définir un type simple et sérialisable pour les élèves
@@ -28,9 +28,10 @@ interface ClassPageClientProps {
         eleves: SimpleStudent[];
     };
     metiers: Metier[];
+    teacher: User;
 }
 
-export default function ClassPageClient({ classe, metiers }: ClassPageClientProps) {
+export default function ClassPageClient({ classe, metiers, teacher }: ClassPageClientProps) {
   const [selectedStudents, setSelectedStudents] = useState<Set<string>>(new Set());
   const router = useRouter();
 
@@ -58,7 +59,7 @@ export default function ClassPageClient({ classe, metiers }: ClassPageClientProp
 
   return (
     <>
-      <Header />
+      <Header user={teacher} />
       <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
             <div className='flex items-center gap-4'>

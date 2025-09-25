@@ -1,8 +1,14 @@
 import Link from 'next/link';
-import { School, LogIn } from 'lucide-react';
+import { School } from 'lucide-react';
+import { UserNav } from './UserNav';
 import { Button } from './ui/button';
+import { User } from '@prisma/client';
 
-export function Header() {
+interface HeaderProps {
+  user?: User | null;
+}
+
+export function Header({ user }: HeaderProps) {
   return (
     <header className="bg-card border-b top-0 z-50 sticky">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
@@ -14,12 +20,7 @@ export function Header() {
            <Button variant="ghost" asChild>
             <Link href="/librairie-metiers">Métiers</Link>
           </Button>
-          <Button asChild>
-            <Link href="/login">
-              <LogIn className="mr-2 h-4 w-4" />
-              Connexion
-            </Link>
-          </Button>
+          <UserNav user={user} />
         </nav>
       </div>
     </header>
