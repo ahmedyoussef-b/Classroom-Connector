@@ -1,7 +1,7 @@
 // src/app/teacher/class/[id]/ClassPageClient.tsx
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { StudentCard } from '@/components/StudentCard';
 import { Header } from '@/components/Header';
@@ -75,7 +75,6 @@ export default function ClassPageClient({ classe, metiers }: ClassPageClientProp
             <StudentCard 
                 key={student.id} 
                 student={student} 
-                careers={metiers}
                 isSelected={selectedStudents.has(student.id)}
                 onSelectionChange={handleSelectionChange}
              />
