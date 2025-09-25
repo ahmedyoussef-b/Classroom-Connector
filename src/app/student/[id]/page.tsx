@@ -1,10 +1,11 @@
 
+
 // src/app/student/[id]/page.tsx
 import { Header } from '@/components/Header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import prisma from '@/lib/prisma';
 import { notFound } from 'next/navigation';
-import { User, Lightbulb, GraduationCap, FileUp } from 'lucide-react';
+import { User, Lightbulb, GraduationCap, FileUp, Video } from 'lucide-react';
 import { CareerThemeWrapper } from '@/components/CareerThemeWrapper';
 import { PersonalizedContent } from '@/components/PersonalizedContent';
 import { StudentWithStateAndCareer } from '@/lib/types';
@@ -67,6 +68,8 @@ export default async function StudentPage({ params, searchParams }: { params: { 
   );
 
   const ambitionIcon = career ? <GraduationCap className="h-5 w-5 text-primary" /> : <Lightbulb className="h-5 w-5 text-accent" />;
+  
+  const sessionId = `live-session-${Date.now()}`;
 
 
   return (
@@ -126,6 +129,24 @@ export default async function StudentPage({ params, searchParams }: { params: { 
                 <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
+                           <Video />
+                           Session en direct
+                        </CardTitle>
+                        <CardDescription>
+                            Votre professeur vous a invité à une session vidéo.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                       <Button asChild className="w-full">
+                           <Link href={`/session/${sessionId}?role=student&studentId=${student.id}`}>
+                               Rejoindre la session
+                           </Link>
+                       </Button>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
                             <FileUp />
                             Soumettre un devoir
                         </CardTitle>
@@ -149,3 +170,4 @@ export default async function StudentPage({ params, searchParams }: { params: { 
     </CareerThemeWrapper>
   );
 }
+
