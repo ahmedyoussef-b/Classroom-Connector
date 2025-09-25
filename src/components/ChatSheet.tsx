@@ -134,7 +134,10 @@ export function ChatSheet({ chatroomId }: { chatroomId: string }) {
                 if (existingIndex > -1) {
                     newReactions.splice(existingIndex, 1);
                 } else {
-                    newReactions.push({ id: 'temp', emoji, userId: currentUserId, messageId });
+                    newReactions.push({
+                      id: 'temp', emoji, userId: currentUserId, messageId,
+                      createdAt: new Date()
+                    });
                 }
                 return { ...msg, reactions: newReactions };
             }
