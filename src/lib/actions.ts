@@ -12,8 +12,9 @@ export async function setStudentCareer(studentId: string, careerId: string | nul
       metierId: careerId,
     },
   });
-  revalidatePath('/teacher/class/[id]', 'page');
+  // This invalidates the cache for the specific student page and the class page
   revalidatePath(`/student/${studentId}`);
+  revalidatePath('/teacher/class/[id]', 'page');
 }
 
 export async function togglePunishment(studentId: string, classeId: string) {

@@ -30,10 +30,9 @@ export function TeacherCareerSelector({
   const router = useRouter();
 
   const handleCareerChange = (newCareerId: string) => {
-    startTransition(() => {
-      setStudentCareer(studentId, newCareerId === 'none' ? null : newCareerId).then(() => {
-        router.refresh();
-      });
+    startTransition(async () => {
+      await setStudentCareer(studentId, newCareerId === 'none' ? null : newCareerId);
+      router.refresh();
     });
   };
 
