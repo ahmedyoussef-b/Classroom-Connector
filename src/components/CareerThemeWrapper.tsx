@@ -1,3 +1,4 @@
+//src/components/CareerThemeWrapper.tsx
 "use client";
 
 import type { Metier } from '@prisma/client';
@@ -16,20 +17,28 @@ interface CareerThemeWrapperProps {
   children: React.ReactNode;
 }
 
+// Définir un type qui étend les propriétés CSS de React pour inclure nos variables personnalisées.
+interface CustomCSSProperties extends React.CSSProperties {
+    '--custom-bg-image'?: string;
+    '--primary-hsl'?: string;
+    '--accent-hsl'?: string;
+}
+
+
 export function CareerThemeWrapper({ career, children }: CareerThemeWrapperProps) {
     const theme = career?.theme as any; // Cast to any to access dynamic properties
 
-  const themeStyles: React.CSSProperties = career
-    ? ({
+  const themeStyles: CustomCSSProperties = career
+    ? {
         '--custom-bg-image': theme?.backgroundImage,
         '--primary-hsl': theme?.primaryColor,
         '--accent-hsl': theme?.accentColor,
         cursor: theme?.cursor.replace('cursor-', ''),
-      } as React.CSSProperties)
-    : ({
+      }
+    : {
         '--primary-hsl': '207 90% 54%',
         '--accent-hsl': '36 100% 65%',
-      } as React.CSSProperties);
+      };
 
   const themeClasses = career 
     ? `bg-gradient-to-br ${theme?.backgroundColor} ${theme?.textColor}`
