@@ -1,5 +1,7 @@
+
 // prisma/seed.ts
 import { PrismaClient, Role } from '@prisma/client';
+import placeholderImages from '../src/lib/placeholder-images.json';
 
 const prisma = new PrismaClient();
 
@@ -23,13 +25,14 @@ async function main() {
     data: {
       nom: 'Pompier',
       description: 'Protège les personnes et les biens des incendies.',
+      icon: 'Flame',
       theme: {
         backgroundColor: 'from-red-500 to-orange-500',
         textColor: 'text-white',
         primaryColor: '24 96% 59%', // orange-500
         accentColor: '0 84% 60%', // red-500
         cursor: 'cursor-crosshair',
-        backgroundImage: 'linear-gradient(to right, var(--tw-gradient-stops))',
+        imageUrl: placeholderImages.pompier.url,
       },
     },
   });
@@ -38,13 +41,14 @@ async function main() {
     data: {
       nom: 'Astronaute',
       description: "Explore l'espace et voyage vers d'autres planètes.",
+      icon: 'Rocket',
       theme: {
         backgroundColor: 'from-gray-800 to-blue-900',
         textColor: 'text-white',
         primaryColor: '217 91% 60%', // blue-500
         accentColor: '221 39% 11%', // gray-900
         cursor: 'cursor-grab',
-        backgroundImage: 'linear-gradient(to right, var(--tw-gradient-stops))',
+        imageUrl: placeholderImages.astronaute.url,
       },
     },
   });
@@ -53,13 +57,14 @@ async function main() {
     data: {
       nom: 'Vétérinaire',
       description: 'Soigne les animaux malades et blessés.',
+      icon: 'HeartPulse',
       theme: {
         backgroundColor: 'from-green-400 to-teal-500',
         textColor: 'text-white',
         primaryColor: '162 72% 47%', // teal-500
         accentColor: '142 58% 58%', // green-400
         cursor: 'cursor-help',
-        backgroundImage: 'linear-gradient(to right, var(--tw-gradient-stops))',
+        imageUrl: placeholderImages.veterinaire.url,
       },
     },
   });
@@ -118,16 +123,19 @@ async function main() {
     createdStudents.push(student);
   }
 
-  for (let i = 0; i < createdStudents.length; i++) {
-     await prisma.etatEleve.create({
-      data: {
-        eleveId: createdStudents[i].id,
-        isPunished: false,
-        // Assign a career to some students for demonstration
-        metierId: i < 3 ? [pompier.id, astronaute.id, veterinaire.id][i] : undefined,
-      },
-    });
-  }
+  // Create student states
+  await prisma.etatEleve.create({
+      data: { eleveId: createdStudents[0].id, isPunished: false, metierId: pompier.id },
+  });
+   await prisma.etatEleve.create({
+      data: { eleveId: createdStudents[1].id, isPunished: false, metierId: astronaute.id },
+  });
+   await prisma.etatEleve.create({
+      data: { eleveId: createdStudents[2].id, isPunished: false, metierId: veterinaire.id },
+  });
+    await prisma.etatEleve.create({
+      data: { eleveId: createdStudents[3].id, isPunished: false },
+  });
 
   console.log('✅ Élèves et leurs états créés.');
 
@@ -145,7 +153,7 @@ async function main() {
   await prisma.message.create({
     data: {
         message: "Bonjour Monsieur, j'ai une question sur l'exercice 3.",
-        senderId: createdStudents[0].id, // Alice
+        senderId: createdStudents[0].id,
         senderName: createdStudents[0].name!,
         chatroomId: chatroom.id,
     }

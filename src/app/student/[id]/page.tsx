@@ -1,3 +1,4 @@
+
 // src/app/student/[id]/page.tsx
 import { Header } from '@/components/Header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,6 +12,8 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { BackButton } from '@/components/BackButton';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+
 
 async function getStudentData(id: string): Promise<StudentWithStateAndCareer | null> {
     const student = await prisma.user.findUnique({
@@ -129,12 +132,4 @@ export default async function StudentPage({ params }: { params: { id:string } })
       </div>
     </CareerThemeWrapper>
   );
-}
-
-// Minimal Avatar component for this page
-function Avatar({ children, className }: { children: React.ReactNode, className?: string }) {
-    return <div className={`relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full ${className}`}>{children}</div>
-}
-function AvatarFallback({ children, className }: { children: React.ReactNode, className?: string }) {
-    return <span className={`flex h-full w-full items-center justify-center rounded-full bg-muted ${className}`}>{children}</span>
 }

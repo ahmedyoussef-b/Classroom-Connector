@@ -1,9 +1,19 @@
+
 import { Header } from '@/components/Header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import prisma from '@/lib/prisma';
-import { BookOpen } from 'lucide-react'; // Generic icon
+import * as Icons from 'lucide-react';
+
+type IconName = keyof typeof Icons;
+
+const Icon = ({ name, ...props }: { name: IconName } & Icons.LucideProps) => {
+    const LucideIcon = Icons[name] as React.FC<Icons.LucideProps>;
+    if (!LucideIcon) return <Icons.HelpCircle {...props} />;
+    return <LucideIcon {...props} />;
+};
+
 
 export default async function CareersPage() {
   const careers = await prisma.metier.findMany();
@@ -24,6 +34,8 @@ export default async function CareersPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {careers.map((career) => {
             const theme = career.theme as any;
+            const iconName = career.icon as IconName | null;
+
             return (
               <Link href="#" key={career.id} className="group">
                 <Card
@@ -37,9 +49,8 @@ export default async function CareersPage() {
                       'h-32 flex items-center justify-center p-6 bg-gradient-to-br',
                       theme.backgroundColor
                     )}
-                    style={{ backgroundImage: theme.backgroundImage }}
                   >
-                    <BookOpen className={cn('h-16 w-16', theme.textColor.replace('text-', 'text-'))} />
+                   {iconName && <Icon name={iconName} className={cn('h-16 w-16', theme.textColor)} />}
                   </div>
                   <CardHeader>
                     <CardTitle>{career.nom}</CardTitle>
