@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import { AlertCircle } from 'lucide-react';
+import prisma from '@/lib/prisma';
 
 interface LoginFormProps {
   initialEmail?: string;
@@ -25,7 +26,7 @@ export function LoginForm({ initialEmail = '', emailPlaceholder = 'votre@email.c
     setEmail(initialEmail);
   }, [initialEmail]);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
@@ -38,14 +39,18 @@ export function LoginForm({ initialEmail = '', emailPlaceholder = 'votre@email.c
     if (email === 'teacher@example.com') {
       router.push('/teacher');
     } else if (email.startsWith('student')) {
-       // Extract student number from email like student1@example.com
-      const studentIdMatch = email.match(/^student(\d+)@example\.com$/);
-      if (studentIdMatch) {
-          router.push(`/student/${studentIdMatch[1]}`);
-      } else {
-          // Default to student 1 if format is generic like student@example.com
-          router.push('/student/1');
-      }
+       // Since IDs are not predictable, we will find the first student for demo purpose
+       // In a real app, you would properly look up the user.
+       if (email === 'student@example.com' || email.match(/^student\d+@example\.com$/)) {
+            const firstStudent = await prisma.user.findFirst({ where: { role: 'ELEVE' }, orderBy: { createdAt: 'asc' }});
+            if (firstStudent) {
+                 router.push(`/student/${firstStudent.id}`);
+            } else {
+                setError('Aucun élève trouvé dans la base de données.');
+            }
+       } else {
+           setError('Email non reconnu. Essayez teacher@example.com ou student@example.com.');
+       }
     } else {
       setError('Email non reconnu. Essayez teacher@example.com ou student@example.com.');
     }

@@ -2,10 +2,10 @@
 import prisma from '@/lib/prisma';
 import { notFound } from 'next/navigation';
 import ClassPageClient from './ClassPageClient';
-import type { Metier, User, EtatEleve, Role } from '@prisma/client';
+import type { Metier } from '@prisma/client';
 
-export default async function ClassPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id: classeId } = await params;
+export default async function ClassPage({ params }: { params: { id: string } }) {
+  const classeId = params.id;
 
   const [classe, metiers] = await Promise.all([
     prisma.classe.findUnique({

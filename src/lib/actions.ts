@@ -39,7 +39,6 @@ export async function sendMessage(formData: FormData) {
     const senderId = formData.get('senderId') as string;
     const message = formData.get('message') as string;
     const chatroomId = formData.get('chatroomId') as string;
-    const classeId = formData.get('classeId') as string;
 
     const user = await prisma.user.findUnique({ where: { id: senderId }});
     if (!user) return;
@@ -52,10 +51,10 @@ export async function sendMessage(formData: FormData) {
             chatroomId,
         }
     });
-    revalidatePath(`/teacher/class/${classeId}`);
+    revalidatePath(`/teacher/class/${user.classeId}`);
 }
 
-export async function toggleReaction(messageId: string, emoji: string, userId: string, classeId: string) {
+export async function toggleReaction(messageId: string, emoji: string, userId: string) {
     const existingReaction = await prisma.reaction.findFirst({
         where: {
             messageId,
@@ -63,6 +62,9 @@ export async function toggleReaction(messageId: string, emoji: string, userId: s
             userId,
         },
     });
+     const user = await prisma.user.findUnique({ where: { id: userId }});
+     if (!user) return;
+
 
     if (existingReaction) {
         await prisma.reaction.delete({
@@ -79,7 +81,7 @@ export async function toggleReaction(messageId: string, emoji: string, userId: s
             },
         });
     }
-    revalidatePath(`/teacher/class/${classeId}`);
+    revalidatePath(`/teacher/class/${user.classeId}`);
 }
 
 export async function getMessages(chatroomId: string) {

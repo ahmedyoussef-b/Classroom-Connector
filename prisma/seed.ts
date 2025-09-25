@@ -98,34 +98,37 @@ async function main() {
   // Create students
   console.log('🧑‍🎓 Création des élèves...');
   const studentsData = [
-    { name: 'Alice', ambition: 'devenir pompier' },
-    { name: 'Bob', ambition: 'explorer Mars' },
-    { name: 'Charlie', ambition: 'soigner les animaux' },
-    { name: 'Diana', ambition: "être une artiste célèbre" },
+    { name: 'Alice', ambition: 'devenir pompier', email: 'student1@example.com' },
+    { name: 'Bob', ambition: 'explorer Mars', email: 'student2@example.com' },
+    { name: 'Charlie', ambition: 'soigner les animaux', email: 'student3@example.com' },
+    { name: 'Diana', ambition: "être une artiste célèbre", email: 'student4@example.com' },
   ];
-
-  for (let i = 0; i < studentsData.length; i++) {
-    const studentId = `${i + 1}`;
+  
+  const createdStudents = [];
+  for (const studentData of studentsData) {
     const student = await prisma.user.create({
       data: {
-        id: studentId,
-        email: `student${i + 1}@example.com`,
-        name: studentsData[i].name,
+        email: studentData.email,
+        name: studentData.name,
         role: Role.ELEVE,
-        ambition: studentsData[i].ambition,
+        ambition: studentData.ambition,
         classeId: classeA.id,
       },
     });
+    createdStudents.push(student);
+  }
 
-    await prisma.etatEleve.create({
+  for (let i = 0; i < createdStudents.length; i++) {
+     await prisma.etatEleve.create({
       data: {
-        eleveId: student.id,
+        eleveId: createdStudents[i].id,
         isPunished: false,
         // Assign a career to some students for demonstration
         metierId: i < 3 ? [pompier.id, astronaute.id, veterinaire.id][i] : undefined,
       },
     });
   }
+
   console.log('✅ Élèves et leurs états créés.');
 
   // Create some messages in the chatroom
@@ -142,8 +145,8 @@ async function main() {
   await prisma.message.create({
     data: {
         message: "Bonjour Monsieur, j'ai une question sur l'exercice 3.",
-        senderId: '1', // Alice
-        senderName: 'Alice',
+        senderId: createdStudents[0].id, // Alice
+        senderName: createdStudents[0].name!,
         chatroomId: chatroom.id,
     }
   });
