@@ -4,7 +4,6 @@
 datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
 }
 
 generator client {
@@ -12,19 +11,22 @@ generator client {
 }
 
 model User {
-  id          String    @id @default(cuid())
-  email       String    @unique
-  name        String?
-  role        Role
-  ambition    String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  classe      Classe?   @relation(fields: [classeId], references: [id])
-  classeId    String?
-  etat        EtatEleve? @relation(fields: [etatEleveId], references: [id])
-  etatEleveId String?   @unique
-  messages    Message[]
-  reactions   Reaction[]
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  role      Role     @default(ELEVE)
+  ambition  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  classe   Classe?  @relation(fields: [classeId], references: [id])
+  classeId String?
+
+  messages  Message[]
+  reactions Reaction[]
+  etat      EtatEleve?
+
+  @@map("users")
 }
 
 model Classe {
@@ -33,16 +35,20 @@ model Classe {
   professeur   User    @relation(fields: [professeurId], references: [id])
   professeurId String
   eleves       User[]
-  chatroom     Chatroom? @relation(fields: [chatroomId], references: [id])
-  chatroomId   String? @unique
+  chatroom     Chatroom @relation(fields: [chatroomId], references: [id])
+  chatroomId   String   @unique
+  
+  @@map("classes")
 }
 
 model Metier {
-  id          String      @id @default(cuid())
+  id          String   @id @default(cuid())
   nom         String
   description String
-  theme       Json // { backgroundColor, textColor, primaryColor, accentColor, cursor, backgroundImage }
+  theme       Json
   etatsEleves EtatEleve[]
+
+  @@map("metiers")
 }
 
 model EtatEleve {
@@ -52,12 +58,16 @@ model EtatEleve {
   metier     Metier? @relation(fields: [metierId], references: [id])
   metierId   String?
   isPunished Boolean @default(false)
+  
+  @@map("etats_eleves")
 }
 
 model Chatroom {
   id        String    @id @default(cuid())
   messages  Message[]
   classe    Classe?
+  
+  @@map("chatrooms")
 }
 
 model Message {
@@ -70,6 +80,8 @@ model Message {
   chatroomId  String
   createdAt   DateTime   @default(now())
   reactions   Reaction[]
+  
+  @@map("messages")
 }
 
 model Reaction {
@@ -81,7 +93,7 @@ model Reaction {
   messageId String
   createdAt DateTime @default(now())
 
-  @@unique([emoji, userId, messageId])
+  @@map("reactions")
 }
 
 enum Role {
