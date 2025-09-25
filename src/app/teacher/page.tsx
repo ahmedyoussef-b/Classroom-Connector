@@ -6,13 +6,24 @@ import { Users } from 'lucide-react';
 import Link from 'next/link';
 import prisma from '@/lib/prisma';
 import { AddClassForm } from '@/components/AddClassForm';
-import { UserWithClasse } from '@/lib/types';
+import { User, Classe, Chatroom } from '@prisma/client';
 
-async function getTeacherData(teacherId: string): Promise<UserWithClasse | null> {
+// Define a more accurate type for the teacher data
+type TeacherWithClasses = User & {
+  classesEnseignees: (Classe & {
+    _count: {
+      eleves: number;
+    };
+    chatroom: Chatroom | null;
+  })[];
+};
+
+
+async function getTeacherData(teacherId: string): Promise<TeacherWithClasses | null> {
   return prisma.user.findUnique({
     where: { id: teacherId },
     include: {
-      classesDirigees: {
+      classesEnseignees: {
         include: {
           _count: {
             select: { eleves: true },
@@ -27,7 +38,7 @@ async function getTeacherData(teacherId: string): Promise<UserWithClasse | null>
 export default async function TeacherPage() {
   // Hardcoded teacher ID for demonstration
   const teacher = await getTeacherData('teacher-id');
-  const classes = teacher?.classesDirigees || [];
+  const classes = teacher?.classesEnseignees || [];
   const mainChatroomId = classes.length > 0 ? classes[0].chatroomId : null;
 
   return (
