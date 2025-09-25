@@ -1,9 +1,19 @@
 // src/app/login/page.tsx
+'use client';
+
+import { Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { LoginForm } from '@/components/LoginForm';
 import { School } from 'lucide-react';
 import Link from 'next/link';
 
-export default function LoginPage() {
+function LoginPageContent() {
+  const searchParams = useSearchParams();
+  const role = searchParams.get('role');
+
+  const initialEmail = role === 'student' ? 'student@example.com' : role === 'teacher' ? 'teacher@example.com' : '';
+  const placeholder = role === 'student' ? 'student@example.com' : 'teacher@example.com';
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
       <div className="w-full max-w-md">
@@ -19,9 +29,17 @@ export default function LoginPage() {
           </p>
         </div>
         
-        <LoginForm />
+        <LoginForm initialEmail={initialEmail} emailPlaceholder={placeholder} />
 
       </div>
     </div>
-  );
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div>Chargement...</div>}>
+      <LoginPageContent />
+    </Suspense>
+  )
 }

@@ -20,12 +20,12 @@ export default function HomePage() {
           </p>
           <div className="mt-8 flex justify-center gap-4">
             <Button size="lg" asChild>
-              <Link href="/login">
+              <Link href="/login?role=teacher">
                 Espace Professeur <ArrowRight className="ml-2" />
               </Link>
             </Button>
             <Button size="lg" variant="secondary" asChild>
-              <Link href="/login">
+              <Link href="/login?role=student">
                 Espace Élève <ArrowRight className="ml-2" />
               </Link>
             </Button>

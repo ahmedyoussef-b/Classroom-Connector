@@ -1,7 +1,7 @@
 // src/components/LoginForm.tsx
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -10,27 +10,44 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import { AlertCircle } from 'lucide-react';
 
-export function LoginForm() {
-  const [email, setEmail] = useState('');
+interface LoginFormProps {
+  initialEmail?: string;
+  emailPlaceholder?: string;
+}
+
+export function LoginForm({ initialEmail = '', emailPlaceholder = 'votre@email.com' }: LoginFormProps) {
+  const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const router = useRouter();
+
+  useEffect(() => {
+    setEmail(initialEmail);
+  }, [initialEmail]);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
+    // Hardcoded logic for demonstration
     if (password !== 'password') {
-      setError('Mot de passe incorrect.');
+      setError('Mot de passe incorrect. Le mot de passe est "password".');
       return;
     }
 
     if (email === 'teacher@example.com') {
       router.push('/teacher');
-    } else if (email === 'student@example.com') {
-      router.push('/student/1');
+    } else if (email.startsWith('student')) {
+       // Extract student number from email like student1@example.com
+      const studentIdMatch = email.match(/^student(\d+)@example\.com$/);
+      if (studentIdMatch) {
+          router.push(`/student/${studentIdMatch[1]}`);
+      } else {
+          // Default to student 1 if format is generic
+          router.push('/student/1');
+      }
     } else {
-      setError('Email non reconnu. Veuillez utiliser teacher@example.com ou student@example.com.');
+      setError('Email non reconnu. Essayez teacher@example.com ou student@example.com.');
     }
   };
 
@@ -47,7 +64,7 @@ export function LoginForm() {
             <Input
               id="email"
               type="email"
-              placeholder="teacher@example.com"
+              placeholder={emailPlaceholder}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
