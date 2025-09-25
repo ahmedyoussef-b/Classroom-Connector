@@ -81,8 +81,6 @@ export default async function StudentPage({ params, searchParams }: { params: { 
             <BackButton />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl mx-auto">
-            {/* Colonne de gauche */}
-            <div className="md:col-span-1 flex flex-col gap-8">
               <Card className="bg-background/80 backdrop-blur-sm">
                 <CardHeader>
                   <div className="flex items-center gap-4">
@@ -122,10 +120,7 @@ export default async function StudentPage({ params, searchParams }: { params: { 
                   )}
                 </CardContent>
               </Card>
-            </div>
 
-            {/* Colonne de droite */}
-            <div className="md:col-span-1 flex flex-col gap-8">
                 <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
@@ -137,6 +132,7 @@ export default async function StudentPage({ params, searchParams }: { params: { 
                         <PersonalizedContent student={student} />
                     </CardContent>
                 </Card>
+                
                 <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
@@ -155,6 +151,7 @@ export default async function StudentPage({ params, searchParams }: { params: { 
                        </Button>
                     </CardContent>
                 </Card>
+                
                 <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
@@ -174,7 +171,6 @@ export default async function StudentPage({ params, searchParams }: { params: { 
                         </form>
                     </CardContent>
                 </Card>
-            </div>
           </div>
         </main>
       </div>
