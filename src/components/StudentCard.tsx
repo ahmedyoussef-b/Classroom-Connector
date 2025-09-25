@@ -47,7 +47,8 @@ export function StudentCard({ student, careers, isSelected, onSelectionChange }:
       "flex flex-col transition-all duration-300 relative",
       isSelected && "ring-2 ring-primary",
       state?.isPunished && "bg-destructive/10 border-destructive",
-      (isPending) && "opacity-50"
+      (isPending || !student.isConnected) && "opacity-50",
+      !student.isConnected && "bg-muted/50"
     )}>
         <div className="absolute top-3 right-3 flex items-center gap-2">
              <div className={cn("h-2.5 w-2.5 rounded-full", student.isConnected ? 'bg-green-500' : 'bg-gray-400')} title={student.isConnected ? 'Connecté' : 'Déconnecté'}></div>
@@ -56,6 +57,7 @@ export function StudentCard({ student, careers, isSelected, onSelectionChange }:
                 checked={isSelected}
                 onCheckedChange={(checked) => onSelectionChange(student.id, !!checked)}
                 aria-label={`Sélectionner ${student.name}`}
+                disabled={!student.isConnected}
             />
         </div>
 
@@ -78,7 +80,7 @@ export function StudentCard({ student, careers, isSelected, onSelectionChange }:
           <Select 
             onValueChange={handleCareerChange} 
             value={state?.metierId ?? 'none'} 
-            disabled={state?.isPunished || isPending}
+            disabled={state?.isPunished || isPending || !student.isConnected}
           >
             <SelectTrigger id={`career-select-${student.id}`} className="w-full">
               <SelectValue placeholder="Sélectionnez un métier..." />
@@ -102,13 +104,16 @@ export function StudentCard({ student, careers, isSelected, onSelectionChange }:
             <span>Thème: {currentCareer.nom}.</span>
           </div>
         )}
+         {!student.isConnected && (
+             <p className="text-xs text-center text-muted-foreground font-semibold">Cet élève est hors ligne.</p>
+        )}
       </CardContent>
       <CardFooter className="flex flex-col gap-2">
         <Button
           variant={state?.isPunished ? 'destructive' : 'outline'}
           onClick={handlePunish}
           className="w-full"
-          disabled={isPending}
+          disabled={isPending || !student.isConnected}
         >
           {state?.isPunished ? (
             <Ban className="mr-2 h-4 w-4" />
