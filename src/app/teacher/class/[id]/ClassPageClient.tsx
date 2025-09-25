@@ -1,4 +1,3 @@
-
 // src/app/teacher/class/[id]/ClassPageClient.tsx
 "use client";
 
@@ -9,15 +8,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ArrowLeft, Video } from 'lucide-react';
 import type { User, EtatEleve, Metier } from '@prisma/client';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { VideoSessionDialog } from '@/components/VideoSessionDialog';
 
 interface ClassPageClientProps {
     classe: {
@@ -30,7 +21,7 @@ interface ClassPageClientProps {
 
 export default function ClassPageClient({ classe, metiers }: ClassPageClientProps) {
   const [selectedStudents, setSelectedStudents] = useState<Set<string>>(new Set());
-  const [isAlertOpen, setIsAlertOpen] = useState(false);
+  const [isSessionOpen, setIsSessionOpen] = useState(false);
 
   const handleSelectionChange = (studentId: string, isSelected: boolean) => {
     setSelectedStudents(prev => {
@@ -46,14 +37,17 @@ export default function ClassPageClient({ classe, metiers }: ClassPageClientProp
 
   const selectedCount = selectedStudents.size;
   const selectedStudentNames = useMemo(() => {
+    if (selectedCount === 0) return "";
     return classe.eleves
       .filter(student => selectedStudents.has(student.id))
       .map(student => student.name)
       .join(', ');
-  }, [selectedStudents, classe.eleves]);
+  }, [selectedStudents, classe.eleves, selectedCount]);
 
   const handleStartSession = () => {
-    setIsAlertOpen(true);
+    if (selectedCount > 0) {
+      setIsSessionOpen(true);
+    }
   };
 
   return (
@@ -65,6 +59,7 @@ export default function ClassPageClient({ classe, metiers }: ClassPageClientProp
                  <Button variant="outline" size="icon" asChild>
                     <Link href="/teacher">
                         <ArrowLeft />
+                        <span className="sr-only">Retour</span>
                     </Link>
                 </Button>
                 <div>
@@ -92,20 +87,12 @@ export default function ClassPageClient({ classe, metiers }: ClassPageClientProp
           ))}
         </div>
       </main>
-
-       <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Session audio/visuelle</AlertDialogTitle>
-            <AlertDialogDescription>
-              Cette fonctionnalité est en cours de développement. La session serait lancée avec les élèves suivants : <span className="font-bold">{selectedStudentNames}</span>.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogAction onClick={() => setIsAlertOpen(false)}>Compris</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      
+      <VideoSessionDialog 
+        isOpen={isSessionOpen}
+        onOpenChange={setIsSessionOpen}
+        studentNames={selectedStudentNames}
+      />
     </>
   );
 }
