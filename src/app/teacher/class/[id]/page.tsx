@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useMemo } from 'react';
@@ -19,42 +18,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import prisma from '@/lib/prisma';
-import { notFound } from 'next/navigation';
-
-
-// This is a server component that fetches data
-export default async function ClassPageWrapper({ params }: { params: { id: string } }) {
-  const classeId = params.id;
-
-  const classe = await prisma.classe.findUnique({
-    where: { id: classeId },
-    include: {
-      eleves: {
-        include: {
-          etat: true
-        }
-      }
-    }
-  });
-
-  if (!classe) {
-    notFound();
-  }
-
-  const metiers = await prisma.metier.findMany();
-
-  // Simulate connection status for demonstration
-  const elevesWithConnection = classe.eleves.map((eleve, index) => ({
-    ...eleve,
-    isConnected: index % 2 === 0, // Alternate connected status
-  }));
-  
-  const classeWithConnection = { ...classe, eleves: elevesWithConnection };
-
-
-  return <ClassPageClient classe={classeWithConnection as any} metiers={metiers as any} />;
-}
+import PageData from './page-data';
 
 
 interface ClassPageClientProps {
@@ -147,4 +111,8 @@ function ClassPageClient({ classe, metiers }: ClassPageClientProps) {
       </AlertDialog>
     </>
   );
+}
+
+export default function ClassPage({ params }: { params: { id: string } }) {
+  return <PageData params={params} Page={ClassPageClient} />;
 }
