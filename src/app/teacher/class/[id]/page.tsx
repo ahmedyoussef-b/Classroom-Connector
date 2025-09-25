@@ -17,9 +17,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { notFound } from 'next/navigation';
-import prisma from '@/lib/prisma';
-
 
 interface ClassPageClientProps {
     classe: {
@@ -114,6 +111,9 @@ function ClassPageClient({ classe, metiers }: ClassPageClientProps) {
 
 
 // Server Component Wrapper
+import prisma from '@/lib/prisma';
+import { notFound } from 'next/navigation';
+
 export default async function ClassPage({ params }: { params: { id: string } }) {
   const classeId = params.id;
 
