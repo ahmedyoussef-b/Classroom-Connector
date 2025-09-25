@@ -1,3 +1,4 @@
+
 // src/app/student/[id]/page.tsx
 import { Header } from '@/components/Header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -167,7 +168,7 @@ export default async function StudentPage({ params, searchParams }: { params: { 
                         <CardTitle className="flex items-center gap-2">
                             <FileUp />
                             Soumettre un devoir
-                        </Title>
+                        </CardTitle>
                         <CardDescription>
                             Importez votre travail pour que votre professeur puisse le consulter.
                         </CardDescription>
