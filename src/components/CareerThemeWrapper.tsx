@@ -20,16 +20,16 @@ export function CareerThemeWrapper({ career, children }: CareerThemeWrapperProps
     const theme = career?.theme as any; // Cast to any to access dynamic properties
 
   const themeStyles: React.CSSProperties = career
-    ? {
+    ? ({
         '--custom-bg-image': theme?.backgroundImage,
         '--primary-hsl': theme?.primaryColor,
         '--accent-hsl': theme?.accentColor,
         cursor: theme?.cursor.replace('cursor-', ''),
-      }
-    : {
+      } as React.CSSProperties)
+    : ({
         '--primary-hsl': '207 90% 54%',
         '--accent-hsl': '36 100% 65%',
-      };
+      } as React.CSSProperties);
 
   const themeClasses = career 
     ? `bg-gradient-to-br ${theme?.backgroundColor} ${theme?.textColor}`
