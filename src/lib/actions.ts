@@ -118,8 +118,6 @@ export async function createClass(formData: FormData) {
 }
 
 export async function addStudentToClass(formData: FormData) {
-    'use server';
-
     const name = formData.get('name') as string;
     const email = formData.get('email') as string;
     const ambition = formData.get('ambition') as string;
@@ -147,4 +145,13 @@ export async function addStudentToClass(formData: FormData) {
     });
 
     revalidatePath(`/teacher/class/${classeId}`);
+}
+
+export async function getStudentByEmail(email: string) {
+    return prisma.user.findFirst({
+        where: {
+            email,
+            role: 'ELEVE'
+        },
+    });
 }

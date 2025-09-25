@@ -9,7 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import { AlertCircle } from 'lucide-react';
-import prisma from '@/lib/prisma';
+import { getStudentByEmail } from '@/lib/actions';
+
 
 interface LoginFormProps {
   initialEmail?: string;
@@ -39,20 +40,19 @@ export function LoginForm({ initialEmail = '', emailPlaceholder = 'votre@email.c
     if (email === 'teacher@example.com') {
       router.push('/teacher');
     } else if (email.startsWith('student')) {
-       // Since IDs are not predictable, we will find the first student for demo purpose
        // In a real app, you would properly look up the user.
        if (email === 'student@example.com' || email.match(/^student\d+@example\.com$/)) {
-            const firstStudent = await prisma.user.findFirst({ where: { role: 'ELEVE' }, orderBy: { createdAt: 'asc' }});
-            if (firstStudent) {
-                 router.push(`/student/${firstStudent.id}`);
+            const student = await getStudentByEmail(email);
+            if (student) {
+                 router.push(`/student/${student.id}`);
             } else {
-                setError('Aucun élève trouvé dans la base de données.');
+                setError('Aucun élève trouvé avec cet email.');
             }
        } else {
-           setError('Email non reconnu. Essayez teacher@example.com ou student@example.com.');
+           setError('Email non reconnu. Essayez teacher@example.com ou un email étudiant valide.');
        }
     } else {
-      setError('Email non reconnu. Essayez teacher@example.com ou student@example.com.');
+      setError('Email non reconnu. Essayez teacher@example.com ou un email étudiant valide.');
     }
   };
 
