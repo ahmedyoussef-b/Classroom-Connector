@@ -12,11 +12,11 @@ export async function setStudentCareer(studentId: string, careerId: string | nul
       metierId: careerId,
     },
   });
-  revalidatePath('/teacher/class-a');
+  revalidatePath('/teacher/class/[id]', 'page');
   revalidatePath(`/student/${studentId}`);
 }
 
-export async function togglePunishment(studentId: string) {
+export async function togglePunishment(studentId: string, classeId: string) {
     const studentState = await prisma.etatEleve.findUnique({
         where: {
             eleveId: studentId,
@@ -31,7 +31,7 @@ export async function togglePunishment(studentId: string) {
       isPunished: !studentState?.isPunished,
     },
   });
-  revalidatePath('/teacher/class-a');
+  revalidatePath(`/teacher/class/${classeId}`);
   revalidatePath(`/student/${studentId}`);
 }
 
@@ -39,6 +39,7 @@ export async function sendMessage(formData: FormData) {
     const senderId = formData.get('senderId') as string;
     const message = formData.get('message') as string;
     const chatroomId = formData.get('chatroomId') as string;
+    const classeId = formData.get('classeId') as string;
 
     const user = await prisma.user.findUnique({ where: { id: senderId }});
     if (!user) return;
@@ -51,10 +52,10 @@ export async function sendMessage(formData: FormData) {
             chatroomId,
         }
     });
-    revalidatePath('/teacher/class-a');
+    revalidatePath(`/teacher/class/${classeId}`);
 }
 
-export async function toggleReaction(messageId: string, emoji: string, userId: string) {
+export async function toggleReaction(messageId: string, emoji: string, userId: string, classeId: string) {
     const existingReaction = await prisma.reaction.findFirst({
         where: {
             messageId,
@@ -78,7 +79,7 @@ export async function toggleReaction(messageId: string, emoji: string, userId: s
             },
         });
     }
-    revalidatePath('/teacher/class-a');
+    revalidatePath(`/teacher/class/${classeId}`);
 }
 
 export async function getMessages(chatroomId: string) {
@@ -87,4 +88,29 @@ export async function getMessages(chatroomId: string) {
         include: { reactions: true },
         orderBy: { createdAt: 'asc' }
     });
+}
+
+export async function createClass(formData: FormData) {
+  const nom = formData.get('nom') as string;
+  const professeurId = formData.get('professeurId') as string;
+  
+  if (!nom || !professeurId) {
+      throw new Error('Le nom de la classe et l\'ID du professeur sont requis.');
+  }
+
+  // 1. Create a new chatroom for the class
+  const chatroom = await prisma.chatroom.create({
+      data: {}
+  });
+
+  // 2. Create the class
+  await prisma.classe.create({
+    data: {
+      nom,
+      professeurId,
+      chatroomId: chatroom.id,
+    },
+  });
+
+  revalidatePath('/teacher');
 }
