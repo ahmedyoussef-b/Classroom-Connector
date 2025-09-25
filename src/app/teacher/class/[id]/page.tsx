@@ -1,4 +1,5 @@
-
+// src/app/teacher/class/[id]/page.tsx
+"use client";
 
 import { useState, useMemo } from 'react';
 import { StudentCard } from '@/components/StudentCard';
@@ -16,8 +17,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import prisma from '@/lib/prisma';
 import { notFound } from 'next/navigation';
+import prisma from '@/lib/prisma';
+
 
 interface ClassPageClientProps {
     classe: {
@@ -29,8 +31,6 @@ interface ClassPageClientProps {
 }
 
 function ClassPageClient({ classe, metiers }: ClassPageClientProps) {
-  "use client";
-
   const [selectedStudents, setSelectedStudents] = useState<Set<string>>(new Set());
   const [isAlertOpen, setIsAlertOpen] = useState(false);
 
@@ -113,6 +113,7 @@ function ClassPageClient({ classe, metiers }: ClassPageClientProps) {
 }
 
 
+// Server Component Wrapper
 export default async function ClassPage({ params }: { params: { id: string } }) {
   const classeId = params.id;
 
