@@ -11,8 +11,7 @@ import { setStudentCareer, togglePunishment } from '@/lib/actions';
 import { ArrowLeft, User, Briefcase, Zap, FileUp } from 'lucide-react';
 import Link from 'next/link';
 
-export default async function StudentAdminPage({ params }: { params: { id: string } }) {
-  const studentId = params.id;
+export default async function StudentAdminPage({ params: { id: studentId } }: { params: { id: string } }) {
 
   const [student, metiers] = await Promise.all([
     prisma.user.findUnique({
