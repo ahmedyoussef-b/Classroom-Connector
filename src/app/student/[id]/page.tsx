@@ -121,14 +121,14 @@ export default async function StudentPage({ params, searchParams }: { params: { 
                 </CardContent>
               </Card>
 
-                <Card>
+                <Card className="flex flex-col">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                            <Sparkles />
                            Votre parcours personnalisé
                         </CardTitle>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="flex-grow">
                         <PersonalizedContent student={student} />
                     </CardContent>
                 </Card>

@@ -93,25 +93,23 @@ export function PersonalizedContent({ student }: PersonalizedContentProps) {
   };
 
   return (
-    <div className="border-t border-foreground/20 pt-6">
-      <h3 className="text-2xl font-semibold mb-4">Votre parcours personnalisé</h3>
-      
+    <>
       {!content && !loading && (
-        <div className="text-center p-8 border-dashed border-2 border-foreground/20 rounded-lg">
-          <p className="text-muted-foreground mb-4">
-            Découvrez à quoi pourrait ressembler votre avenir en tant que {student.ambition}!
+        <div className="text-center p-4 sm:p-8 border-dashed border-2 border-foreground/20 rounded-lg flex flex-col items-center justify-center h-full">
+          <p className="text-muted-foreground mb-4 text-sm sm:text-base">
+            Prêt à explorer votre avenir en tant que {student.ambition}?
           </p>
           <Button onClick={generateContent}>
             <Sparkles className="mr-2 h-4 w-4" />
-            Générer mon plan d'apprentissage
+            Générer mon plan
           </Button>
         </div>
       )}
 
       {loading && (
-        <div className="flex items-center justify-center p-8">
+        <div className="flex items-center justify-center p-8 h-full">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="ml-4 text-muted-foreground">Génération de votre plan personnalisé...</p>
+          <p className="ml-4 text-muted-foreground">Génération de votre plan...</p>
         </div>
       )}
 
@@ -123,12 +121,10 @@ export function PersonalizedContent({ student }: PersonalizedContentProps) {
       )}
 
       {content && (
-        <Card className="bg-background/70">
-          <CardContent className="p-6">
-            <Markdown content={content} />
-          </CardContent>
-        </Card>
+        <div className="h-full">
+          <Markdown content={content} />
+        </div>
       )}
-    </div>
+    </>
   );
 }
