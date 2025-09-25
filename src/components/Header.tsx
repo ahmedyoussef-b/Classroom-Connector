@@ -1,8 +1,9 @@
+// src/components/Header.tsx
 import Link from 'next/link';
 import { School } from 'lucide-react';
 import { UserNav } from './UserNav';
 import { Button } from './ui/button';
-import { User } from '@prisma/client';
+import type { User } from '@prisma/client';
 
 interface HeaderProps {
   user?: User | null;
