@@ -1,5 +1,4 @@
 
-"use client";
 
 import { useState, useMemo } from 'react';
 import { StudentCard } from '@/components/StudentCard';
@@ -8,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ArrowLeft, Video } from 'lucide-react';
 import type { User, EtatEleve, Metier } from '@prisma/client';
-import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,9 +29,10 @@ interface ClassPageClientProps {
 }
 
 function ClassPageClient({ classe, metiers }: ClassPageClientProps) {
+  "use client";
+
   const [selectedStudents, setSelectedStudents] = useState<Set<string>>(new Set());
   const [isAlertOpen, setIsAlertOpen] = useState(false);
-  const { toast } = useToast();
 
   const handleSelectionChange = (studentId: string, isSelected: boolean) => {
     setSelectedStudents(prev => {
@@ -117,7 +116,7 @@ function ClassPageClient({ classe, metiers }: ClassPageClientProps) {
 export default async function ClassPage({ params }: { params: { id: string } }) {
   const classeId = params.id;
 
-  const classe = await prisma.classe.findUnique({
+  const classeData = prisma.classe.findUnique({
     where: { id: classeId },
     include: {
       eleves: {
@@ -128,11 +127,14 @@ export default async function ClassPage({ params }: { params: { id: string } }) 
     },
   });
 
+  const metiersData = prisma.metier.findMany();
+  
+  const [classe, metiers] = await Promise.all([classeData, metiersData]);
+
+
   if (!classe) {
     notFound();
   }
-
-  const metiers = await prisma.metier.findMany();
 
   // Simulate connection status for demonstration
   const elevesWithConnection = classe.eleves.map((eleve, index) => ({
