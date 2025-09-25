@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { BackButton } from '@/components/BackButton';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { TeacherCareerSelector } from '@/components/TeacherCareerSelector';
 
 
 async function getStudentData(id: string): Promise<StudentWithStateAndCareer | null> {
@@ -47,14 +48,17 @@ async function getStudentData(id: string): Promise<StudentWithStateAndCareer | n
 }
 
 
-export default async function StudentPage({ params }: { params: { id:string } }) {
+export default async function StudentPage({ params, searchParams }: { params: { id:string }, searchParams: { [key: string]: string | string[] | undefined } }) {
   const student = await getStudentData(params.id);
+  const viewAs = searchParams.viewAs;
+  const isTeacherView = viewAs === 'teacher';
 
   if (!student) {
     notFound();
   }
 
   const career = student.etat?.metier;
+  const allCareers = isTeacherView ? await prisma.metier.findMany() : [];
 
   return (
     <CareerThemeWrapper career={career ?? undefined}>
@@ -85,12 +89,22 @@ export default async function StudentPage({ params }: { params: { id:string } })
                       <Lightbulb className="h-5 w-5 text-accent" />
                       <p>Votre ambition : <span className="font-semibold italic text-foreground">"{student.ambition}"</span></p>
                   </div>
-                  {career && (
-                      <div className="flex items-center gap-2 text-muted-foreground mt-2">
-                          <GraduationCap className="h-5 w-5 text-primary" />
-                          <p>Votre métier exploré : <span className="font-semibold text-foreground">{career.nom}</span></p>
-                      </div>
-                  )}
+                    
+                    {isTeacherView ? (
+                        <TeacherCareerSelector 
+                            studentId={student.id} 
+                            careers={allCareers} 
+                            currentCareerId={career?.id} 
+                        />
+                    ) : (
+                        career && (
+                            <div className="flex items-center gap-2 text-muted-foreground mt-2">
+                                <GraduationCap className="h-5 w-5 text-primary" />
+                                <p>Votre métier exploré : <span className="font-semibold text-foreground">{career.nom}</span></p>
+                            </div>
+                        )
+                    )}
+                   
                    {student.classe && (
                       <div className="mt-4">
                           <Button asChild>

@@ -16,6 +16,7 @@ interface CareerThemeWrapperProps {
 interface CustomCSSProperties extends React.CSSProperties {
     '--primary-hsl'?: string;
     '--accent-hsl'?: string;
+    cursor?: string;
 }
 
 
@@ -42,7 +43,7 @@ export function CareerThemeWrapper({ career, children }: CareerThemeWrapperProps
   return (
     <div
       style={themeStyles}
-      className={cn("transition-all duration-700 ease-in-out relative min-h-screen", themeClasses)}
+      className={cn("transition-all duration-700 ease-in-out relative min-h-screen", themeClasses, theme?.cursor)}
     >
         <div 
           className="fixed inset-0 w-full h-full z-[-1] bg-cover bg-center transition-all duration-1000"

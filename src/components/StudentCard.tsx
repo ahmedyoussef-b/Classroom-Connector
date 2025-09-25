@@ -64,7 +64,7 @@ export function StudentCard({ student, isSelected, onSelectionChange }: StudentC
       </CardContent>
       <CardFooter className="flex flex-col gap-2">
          <Button asChild className="w-full" variant="secondary">
-            <Link href={`/student/${student.id}`}>Voir la page de l'élève</Link>
+            <Link href={`/student/${student.id}?viewAs=teacher`}>Voir la page de l'élève</Link>
         </Button>
       </CardFooter>
     </Card>
