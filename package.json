@@ -11,9 +11,9 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "db:seed": "tsx prisma/seed.ts",
+    "db:seed": "prisma migrate dev && tsx prisma/seed.ts",
     "db:push": "prisma db push --accept-data-loss",
-    "migrate": "prisma migrate dev",
+    "migrate": "prisma migrate dev --skip-seed",
     "postinstall": "patch-package"
   },
   "dependencies": {
