@@ -1,106 +1,104 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
 generator client {
   provider = "prisma-client-js"
 }
 
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
-
 model User {
-  id               String    @id @default(cuid())
-  email            String    @unique
-  name             String?
-  role             Role
-  ambition         String?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-  classeId         String?
-  classe           Classe?   @relation(fields: [classeId], references: [id], onDelete: Cascade)
-  classesEnseignees Classe[]  @relation("ProfesseurToClasse")
-  etat             EtatEleve?
-  messages         Message[]
-  reactions        Reaction[]
-  sessions         Session[] @relation("SessionToParticipant")
+  id                String    @id @default(cuid())
+  email             String    @unique
+  name              String?
+  role              Role
+  ambition          String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  classeId          String?
+  classe            Classe?   @relation(fields: [classeId], references: [id])
+  etat              EtatEleve?
+  messages          Message[]
+  reactions         Reaction[]
+  classesEnseignees Classe[]  @relation("ClasseProfesseur")
+
+  // Relations pour les sessions
+  sessionsEnseignees Session[] @relation("SessionProfesseur")
+  sessions           Session[] @relation("SessionParticipants")
 }
 
 model Classe {
   id           String  @id @default(cuid())
   nom          String
+  professeur   User    @relation("ClasseProfesseur", fields: [professeurId], references: [id])
   professeurId String
-  professeur   User    @relation("ProfesseurToClasse", fields: [professeurId], references: [id])
   eleves       User[]
-  chatroomId   String  @unique
   chatroom     Chatroom @relation(fields: [chatroomId], references: [id])
+  chatroomId   String   @unique
+}
 
-  @@index([professeurId])
+model EtatEleve {
+  id         String   @id @default(cuid())
+  eleve      User     @relation(fields: [eleveId], references: [id])
+  eleveId    String   @unique
+  isPunished Boolean
+  metier     Metier?  @relation(fields: [metierId], references: [id])
+  metierId   String?
+  updatedAt  DateTime @updatedAt
 }
 
 model Metier {
   id          String      @id @default(cuid())
-  nom         String      @unique
+  nom         String
   description String
-  icon        String?
+  icon        String
   theme       Json
-  etatsEleves EtatEleve[]
-}
-
-model EtatEleve {
-  id         String  @id @default(cuid())
-  eleveId    String  @unique
-  eleve      User    @relation(fields: [eleveId], references: [id], onDelete: Cascade)
-  metierId   String?
-  metier     Metier? @relation(fields: [metierId], references: [id])
-  isPunished Boolean @default(false)
-
-  @@index([eleveId])
-  @@index([metierId])
+  eleves      EtatEleve[]
 }
 
 model Chatroom {
-  id       String    @id @default(cuid())
-  classe   Classe?
-  messages Message[]
+  id        String    @id @default(cuid())
+  messages  Message[]
+  Classe    Classe?
 }
 
 model Message {
   id          String     @id @default(cuid())
   message     String
-  createdAt   DateTime   @default(now())
+  sender      User       @relation(fields: [senderId], references: [id])
   senderId    String
-  sender      User       @relation(fields: [senderId], references: [id], onDelete: Cascade)
   senderName  String
+  chatroom    Chatroom   @relation(fields: [chatroomId], references: [id])
   chatroomId  String
-  chatroom    Chatroom   @relation(fields: [chatroomId], references: [id], onDelete: Cascade)
+  createdAt   DateTime   @default(now())
   reactions   Reaction[]
-
-  @@index([senderId])
-  @@index([chatroomId])
 }
 
 model Reaction {
   id        String   @id @default(cuid())
   emoji     String
+  user      User     @relation(fields: [userId], references: [id])
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  message   Message  @relation(fields: [messageId], references- [id])
   messageId String
-  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
 
-  @@unique([userId, messageId, emoji])
-  @@index([messageId])
+  @@unique([emoji, userId, messageId])
 }
 
 model Session {
-  id           String   @id @default(cuid())
-  createdAt    DateTime @default(now())
+  id           String    @id @default(cuid())
+  createdAt    DateTime  @default(now())
   endedAt      DateTime?
+  professeur   User      @relation("SessionProfesseur", fields: [professeurId], references: [id])
   professeurId String
-  participants User[]   @relation("SessionToParticipant")
+  participants User[]    @relation("SessionParticipants")
 }
+
 
 enum Role {
   ELEVE
