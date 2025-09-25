@@ -76,7 +76,7 @@ export default async function StudentPage({ params, searchParams }: { params: { 
 
   const ambitionIcon = career ? <GraduationCap className="h-5 w-5 text-primary" /> : <Lightbulb className="h-5 w-5 text-accent" />;
   
-  const activeSession = (student as any).sessionsParticipees?.[0];
+  const activeSession = student.sessionsParticipees?.[0];
   const teacher = isTeacherView ? await prisma.user.findUnique({ where: {id: 'teacher-id'}}) : null;
 
 

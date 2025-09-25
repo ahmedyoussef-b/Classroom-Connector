@@ -1,46 +1,98 @@
-// prisma/schema.prisma
-datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-}
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
   provider = "prisma-client-js"
 }
 
-enum Role {
-  ELEVE
-  PROFESSEUR
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
-  id                String    @id @default(cuid())
-  email             String    @unique
-  name              String?
-  ambition          String?
-  role              Role      @default(ELEVE)
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-  classeId          String?
-  classe            Classe?   @relation("Eleves", fields: [classeId], references: [id], onDelete: SetNull, onUpdate: Cascade)
-  sessionsCrees     Session[] @relation("SessionTeacher")
-  sessionsParticipees Session[] @relation("SessionParticipants")
-  messages          Message[]
-  reactions         Reaction[]
-  etat              EtatEleve?
-  classesEnseignees Classe[]  @relation("ProfesseurClasses")
+  id                  String     @id @default(cuid())
+  email               String     @unique
+  name                String?
+  role                Role       @default(ELEVE)
+  ambition            String?
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+  classeId            String?
+  classe              Classe?    @relation(fields: [classeId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  sessionsCrees       Session[]  @relation("SessionTeacher")
+  sessionsParticipees Session[]  @relation("SessionParticipants")
+  messages            Message[]
+  reactions           Reaction[]
+  etat                EtatEleve?
+  classesEnseignees   Classe[]   @relation("ProfesseurClasses")
+}
+
+enum Role {
+  PROFESSEUR
+  ELEVE
 }
 
 model Classe {
-  id           String    @id @default(cuid())
+  id           String     @id @default(cuid())
   nom          String
-  professeur   User      @relation("ProfesseurClasses", fields: [professeurId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  professeur   User       @relation("ProfesseurClasses", fields: [professeurId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   professeurId String
-  eleves       User[]    @relation("Eleves")
-  chatroomId   String    @unique
-  chatroom     Chatroom  @relation(fields: [chatroomId], references: [id])
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt @default(now())
+  eleves       User[]
+  chatroomId   String     @unique
+  chatroom     Chatroom   @relation(fields: [chatroomId], references: [id])
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt @default(now())
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  createdAt    DateTime @default(now())
+  endedAt      DateTime?
+  professeurId String
+  professeur   User     @relation("SessionTeacher", fields: [professeurId], references: [id])
+  participants User[]   @relation("SessionParticipants")
+}
+
+model Chatroom {
+  id        String    @id @default(cuid())
+  messages  Message[]
+  classe    Classe?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt @default(now())
+}
+
+model Message {
+  id         String     @id @default(cuid())
+  message    String
+  senderId   String
+  senderName String
+  sender     User       @relation(fields: [senderId], references: [id])
+  chatroomId String
+  chatroom   Chatroom   @relation(fields: [chatroomId], references: [id])
+  createdAt  DateTime   @default(now())
+  reactions  Reaction[]
+}
+
+model Reaction {
+  id        String   @id @default(cuid())
+  emoji     String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  messageId String
+  message   Message  @relation(fields: [messageId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([userId, messageId, emoji])
+}
+
+model EtatEleve {
+  id         String  @id @default(cuid())
+  eleveId    String  @unique
+  eleve      User    @relation(fields: [eleveId], references: [id])
+  isPunished Boolean
+  metierId   String?
+  metier     Metier? @relation(fields: [metierId], references: [id])
 }
 
 model Metier {
@@ -49,55 +101,5 @@ model Metier {
   description String
   icon        String?
   theme       Json
-  etatEleves  EtatEleve[]
-}
-
-model EtatEleve {
-  id         String  @id @default(cuid())
-  eleve      User    @relation(fields: [eleveId], references: [id])
-  eleveId    String  @unique
-  metier     Metier? @relation(fields: [metierId], references: [id])
-  metierId   String?
-  isPunished Boolean @default(false)
-}
-
-model Session {
-  id           String   @id @default(cuid())
-  createdAt    DateTime @default(now())
-  endedAt      DateTime?
-  professeur   User     @relation("SessionTeacher", fields: [professeurId], references: [id])
-  professeurId String
-  participants User[]   @relation("SessionParticipants")
-}
-
-model Chatroom {
-  id        String    @id @default(cuid())
-  messages  Message[]
-  Classe    Classe?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt @default(now())
-}
-
-model Message {
-  id          String     @id @default(cuid())
-  message     String
-  sender      User       @relation(fields: [senderId], references: [id])
-  senderId    String
-  senderName  String
-  chatroom    Chatroom   @relation(fields: [chatroomId], references: [id])
-  chatroomId  String
-  createdAt   DateTime   @default(now())
-  reactions   Reaction[]
-}
-
-model Reaction {
-  id        String   @id @default(cuid())
-  emoji     String
-  user      User     @relation(fields: [userId], references: [id])
-  userId    String
-  message   Message  @relation(fields: [messageId], references: [id])
-  messageId String
-  createdAt DateTime @default(now())
-
-  @@unique([userId, messageId, emoji])
+  eleves      EtatEleve[]
 }
