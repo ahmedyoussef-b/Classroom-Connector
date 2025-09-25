@@ -1,8 +1,6 @@
-// prisma/schema.prisma
-
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
 }
 
 generator client {
@@ -13,94 +11,116 @@ model User {
   id                  String     @id @default(cuid())
   email               String     @unique
   name                String?
-  role                Role       @default(ELEVE)
+  role                Role
   ambition            String?
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt @default(now())
+  
+  // Relation pour un élève appartenant à une classe
   classeId            String?
-  classe              Classe?    @relation(fields: [classeId], references: [id])
-  etat                EtatEleve?
+  classe              Classe?    @relation("ElevesDeClasse", fields: [classeId], references: [id])
+  
+  // Relation pour un professeur enseignant dans plusieurs classes
+  classesEnseignees   Classe[]   @relation("ProfesseurDeClasse")
+  
+  // Sessions créées par le professeur
   sessionsCrees       Session[]  @relation("SessionTeacher")
+  
+  // Sessions auxquelles l'utilisateur participe (prof ou élève)
   sessionsParticipees Session[]  @relation("SessionParticipants")
-  messages            Message[]
+
+  etat                EtatEleve?
+  messagesEnvoyes     Message[]
   reactions           Reaction[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Classe {
-  id            String    @id @default(cuid())
-  nom           String
-  professeurId  String
-  professeur    User      @relation(fields: [professeurId], references: [id])
-  eleves        User[]
-  chatroomId    String?   @unique
-  chatroom      Chatroom? @relation(fields: [chatroomId], references: [id])
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt @default(now())
-}
-
-model Metier {
-  id          String      @id @default(cuid())
-  nom         String
-  description String
-  icon        String?
-  theme       Json
-  eleves      EtatEleve[]
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt @default(now())
-}
-
-model EtatEleve {
-  id         String  @id @default(cuid())
-  eleveId    String  @unique
-  eleve      User    @relation(fields: [eleveId], references: [id], onDelete: Cascade)
-  metierId   String?
-  metier     Metier? @relation(fields: [metierId], references: [id])
-  isPunished Boolean @default(false)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt @default(now())
-}
-
-model Session {
-  id           String    @id @default(cuid())
-  createdAt    DateTime  @default(now())
-  endedAt      DateTime?
-  professeurId String
-  professeur   User      @relation("SessionTeacher", fields: [professeurId], references: [id])
-  participants User[]    @relation("SessionParticipants")
-}
-
-model Chatroom {
-  id        String    @id @default(cuid())
-  classe    Classe?
-  messages  Message[]
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt @default(now())
-}
-
-model Message {
-  id          String     @id @default(cuid())
-  message     String
-  senderId    String
-  senderName  String
-  sender      User       @relation(fields: [senderId], references: [id])
-  chatroomId  String
-  chatroom    Chatroom   @relation(fields: [chatroomId], references: [id])
-  reactions   Reaction[]
-  createdAt   DateTime   @default(now())
-}
-
-model Reaction {
-  id        String  @id @default(cuid())
-  emoji     String
-  userId    String
-  user      User    @relation(fields: [userId], references: [id])
-  messageId String
-  message   Message @relation(fields: [messageId], references: [id])
-  createdAt DateTime @default(now())
 }
 
 enum Role {
   ELEVE
   PROFESSEUR
+}
+
+model Classe {
+  id           String    @id @default(cuid())
+  nom          String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt @default(now())
+  
+  professeurId String
+  professeur   User      @relation("ProfesseurDeClasse", fields: [professeurId], references: [id])
+  
+  eleves       User[]    @relation("ElevesDeClasse")
+  
+  chatroomId   String?   @unique
+  chatroom     Chatroom? @relation(fields: [chatroomId], references: [id])
+}
+
+model EtatEleve {
+  id         String   @id @default(cuid())
+  isPunished Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt @default(now())
+
+  eleveId    String   @unique
+  eleve      User     @relation(fields: [eleveId], references: [id])
+
+  metierId   String?
+  metier     Metier?  @relation(fields: [metierId], references: [id])
+}
+
+model Metier {
+  id          String    @id @default(cuid())
+  nom         String
+  description String
+  icon        String?
+  theme       Json
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt @default(now())
+
+  etats       EtatEleve[]
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  createdAt    DateTime @default(now())
+  endedAt      DateTime?
+
+  professeurId String
+  professeur   User     @relation("SessionTeacher", fields: [professeurId], references: [id])
+  participants User[]   @relation("SessionParticipants")
+}
+
+model Chatroom {
+  id        String    @id @default(cuid())
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt @default(now())
+  
+  classe    Classe?
+  messages  Message[]
+}
+
+model Message {
+  id         String     @id @default(cuid())
+  message    String
+  senderId   String
+  senderName String
+  createdAt  DateTime   @default(now())
+
+  sender     User       @relation(fields: [senderId], references: [id])
+  
+  chatroomId String
+  chatroom   Chatroom   @relation(fields: [chatroomId], references: [id])
+
+  reactions  Reaction[]
+}
+
+model Reaction {
+  id        String   @id @default(cuid())
+  emoji     String
+  userId    String
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id])
+  
+  messageId String
+  message   Message  @relation(fields: [messageId], references: [id])
 }
