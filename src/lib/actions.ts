@@ -114,3 +114,35 @@ export async function createClass(formData: FormData) {
 
   revalidatePath('/teacher');
 }
+
+export async function addStudentToClass(formData: FormData) {
+    'use server';
+
+    const name = formData.get('name') as string;
+    const email = formData.get('email') as string;
+    const ambition = formData.get('ambition') as string;
+    const classeId = formData.get('classeId') as string;
+
+    if (!name || !email || !classeId) {
+        throw new Error('Le nom, l\'email et l\'ID de la classe sont requis.');
+    }
+
+    const newStudent = await prisma.user.create({
+        data: {
+            name,
+            email,
+            ambition,
+            classeId,
+            role: 'ELEVE',
+        },
+    });
+
+    await prisma.etatEleve.create({
+        data: {
+            eleveId: newStudent.id,
+            isPunished: false,
+        },
+    });
+
+    revalidatePath(`/teacher/class/${classeId}`);
+}

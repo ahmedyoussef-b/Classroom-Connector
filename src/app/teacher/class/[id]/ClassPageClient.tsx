@@ -7,8 +7,9 @@ import { StudentCard } from '@/components/StudentCard';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowLeft, Video } from 'lucide-react';
+import { ArrowLeft, Video, UserPlus } from 'lucide-react';
 import type { Metier } from '@prisma/client';
+import { AddStudentForm } from '@/components/AddStudentForm';
 
 // Définir un type simple et sérialisable pour les élèves
 type SimpleStudent = {
@@ -72,12 +73,15 @@ export default function ClassPageClient({ classe, metiers }: ClassPageClientProp
                     <p className="text-muted-foreground">Gérez vos élèves et leur parcours d'apprentissage.</p>
                 </div>
             </div>
-          {selectedCount > 0 && (
-            <Button onClick={handleStartSession} className="transition-all animate-in fade-in zoom-in-95">
-              <Video className="mr-2 h-4 w-4" />
-              Démarrer une session ({selectedCount})
-            </Button>
-          )}
+            <div className="flex items-center gap-2">
+                <AddStudentForm classeId={classe.id} />
+                {selectedCount > 0 && (
+                    <Button onClick={handleStartSession} className="transition-all animate-in fade-in zoom-in-95">
+                    <Video className="mr-2 h-4 w-4" />
+                    Démarrer une session ({selectedCount})
+                    </Button>
+                )}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
