@@ -1,9 +1,8 @@
-
 //src/components/CareerThemeWrapper.tsx
 "use client";
 
 import type { Metier } from '@prisma/client';
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import placeholderImages from '@/lib/placeholder-images.json';
 
@@ -21,6 +20,9 @@ interface CustomCSSProperties extends React.CSSProperties {
 
 
 export function CareerThemeWrapper({ career, children }: CareerThemeWrapperProps) {
+    const [zoom, setZoom] = useState(1);
+    const [blur, setBlur] = useState(8);
+
     const theme = career?.theme as any; 
     const careerName = career?.nom.toLowerCase() as keyof typeof placeholderImages || 'default';
     const imageData = placeholderImages[careerName] || placeholderImages.default;
@@ -39,6 +41,35 @@ export function CareerThemeWrapper({ career, children }: CareerThemeWrapperProps
   const themeClasses = career 
     ? theme?.textColor
     : 'text-foreground';
+    
+    useEffect(() => {
+        const handleWheel = (event: WheelEvent) => {
+            event.preventDefault();
+            
+            const zoomSpeed = 0.1;
+            const minZoom = 1;
+            const maxZoom = 2.5;
+            const maxBlur = 8;
+            
+            setZoom(prevZoom => {
+                const newZoom = prevZoom - event.deltaY * zoomSpeed * 0.1;
+                const clampedZoom = Math.max(minZoom, Math.min(newZoom, maxZoom));
+                
+                // Calculate blur based on zoom
+                const blurPercentage = (clampedZoom - minZoom) / (maxZoom - minZoom);
+                const newBlur = maxBlur * (1 - blurPercentage);
+                setBlur(newBlur);
+                
+                return clampedZoom;
+            });
+        };
+
+        window.addEventListener('wheel', handleWheel, { passive: false });
+
+        return () => {
+            window.removeEventListener('wheel', handleWheel);
+        };
+    }, []);
 
   return (
     <div
@@ -47,10 +78,14 @@ export function CareerThemeWrapper({ career, children }: CareerThemeWrapperProps
     >
         <div 
           className="fixed inset-0 w-full h-full z-[-1] bg-cover bg-center transition-all duration-1000"
-          style={{ backgroundImage: `url(${imageData.url})` }}
+          style={{ 
+              backgroundImage: `url(${imageData.url})`,
+              transform: `scale(${zoom})`,
+              filter: `blur(${blur}px)`
+          }}
           data-ai-hint={imageData.hint}
         />
-        <div className="fixed inset-0 w-full h-full z-[-1] bg-background/60 backdrop-blur-sm" />
+        <div className="fixed inset-0 w-full h-full z-[-1] bg-background/60" />
       
       {children}
     </div>
