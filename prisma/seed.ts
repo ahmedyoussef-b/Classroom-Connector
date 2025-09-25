@@ -105,9 +105,10 @@ async function main() {
   ];
 
   for (let i = 0; i < studentsData.length; i++) {
+    const studentId = `${i + 1}`;
     const student = await prisma.user.create({
       data: {
-        id: (i + 1).toString(),
+        id: studentId,
         email: `student${i + 1}@example.com`,
         name: studentsData[i].name,
         role: Role.ELEVE,
