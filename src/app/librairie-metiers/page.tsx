@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import prisma from '@/lib/prisma';
 import * as Icons from 'lucide-react';
+import { BackButton } from '@/components/BackButton';
 
 type IconName = keyof typeof Icons;
 
@@ -22,6 +23,9 @@ export default async function CareersPage() {
     <>
       <Header />
       <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-8">
+          <BackButton />
+        </div>
         <div className="text-center mb-12">
           <h1 className="text-4xl font-extrabold tracking-tight lg:text-5xl">
             Librairie Métiers
