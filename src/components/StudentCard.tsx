@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { User, EtatEleve, Metier } from '@prisma/client';
@@ -10,16 +11,20 @@ import { Avatar, AvatarFallback } from './ui/avatar';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { useTransition } from 'react';
+import { Checkbox } from './ui/checkbox';
+import { Label } from './ui/label';
 
 // We need to re-import an icon here as Lucide icons cannot be passed from server to client components
 import { BookOpen } from 'lucide-react';
 
 interface StudentCardProps {
-  student: User & { etat: EtatEleve | null };
+  student: User & { etat: EtatEleve | null, isConnected?: boolean };
   careers: Metier[];
+  isSelected: boolean;
+  onSelectionChange: (studentId: string, isSelected: boolean) => void;
 }
 
-export function StudentCard({ student, careers }: StudentCardProps) {
+export function StudentCard({ student, careers, isSelected, onSelectionChange }: StudentCardProps) {
   const [isPending, startTransition] = useTransition();
 
   const handleCareerChange = (careerId: string) => {
@@ -39,10 +44,21 @@ export function StudentCard({ student, careers }: StudentCardProps) {
 
   return (
     <Card className={cn(
-      "flex flex-col transition-all duration-300 hover:shadow-xl hover:-translate-y-1",
+      "flex flex-col transition-all duration-300 relative",
+      isSelected && "ring-2 ring-primary",
       state?.isPunished && "bg-destructive/10 border-destructive",
       (isPending) && "opacity-50"
     )}>
+        <div className="absolute top-3 right-3 flex items-center gap-2">
+             <div className={cn("h-2.5 w-2.5 rounded-full", student.isConnected ? 'bg-green-500' : 'bg-gray-400')} title={student.isConnected ? 'Connecté' : 'Déconnecté'}></div>
+             <Checkbox
+                id={`select-${student.id}`}
+                checked={isSelected}
+                onCheckedChange={(checked) => onSelectionChange(student.id, !!checked)}
+                aria-label={`Sélectionner ${student.name}`}
+            />
+        </div>
+
       <CardHeader>
         <div className="flex items-center gap-4">
           <Avatar className="h-12 w-12">
@@ -56,9 +72,9 @@ export function StudentCard({ student, careers }: StudentCardProps) {
       </CardHeader>
       <CardContent className="flex-grow space-y-4">
         <div>
-          <label htmlFor={`career-select-${student.id}`} className="text-sm font-medium text-muted-foreground">
+          <Label htmlFor={`career-select-${student.id}`} className="text-sm font-medium text-muted-foreground">
             Métier assigné
-          </label>
+          </Label>
           <Select 
             onValueChange={handleCareerChange} 
             value={state?.metierId ?? 'none'} 
