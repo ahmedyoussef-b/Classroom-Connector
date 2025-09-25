@@ -10,10 +10,13 @@ async function main() {
 
   // Clean up existing data
   console.log('🧹 Nettoyage des anciennes données...');
+  // Delete relations first
+  await prisma.session.deleteMany();
   await prisma.reaction.deleteMany();
   await prisma.message.deleteMany();
   await prisma.etatEleve.deleteMany();
-  await prisma.session.deleteMany();
+  
+  // Then delete main entities
   await prisma.user.deleteMany();
   await prisma.classe.deleteMany();
   await prisma.metier.deleteMany();
