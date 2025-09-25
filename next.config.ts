@@ -24,11 +24,6 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  experimental: {
-    // This allows the Next.js dev server to accept requests from any origin.
-    // This is required for the Studio dev server to work correctly.
-    allowedDevOrigins: ['**'],
-  },
 };
 
 export default nextConfig;
