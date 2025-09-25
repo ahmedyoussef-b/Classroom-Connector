@@ -14,7 +14,7 @@ interface PersonalizedContentProps {
 
 function Markdown({ content }: { content: string }) {
     const lines = content.split('\n');
-    const elements = [];
+    const elements: JSX.Element[] = [];
     let listType: 'ol' | 'ul' | null = null;
     let listItems: string[] = [];
 
