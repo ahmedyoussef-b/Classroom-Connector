@@ -2,13 +2,13 @@
 "use client";
 
 import { useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { StudentCard } from '@/components/StudentCard';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ArrowLeft, Video } from 'lucide-react';
 import type { User, EtatEleve, Metier } from '@prisma/client';
-import { VideoSessionDialog } from '@/components/VideoSessionDialog';
 
 interface ClassPageClientProps {
     classe: {
@@ -21,7 +21,7 @@ interface ClassPageClientProps {
 
 export default function ClassPageClient({ classe, metiers }: ClassPageClientProps) {
   const [selectedStudents, setSelectedStudents] = useState<Set<string>>(new Set());
-  const [isSessionOpen, setIsSessionOpen] = useState(false);
+  const router = useRouter();
 
   const handleSelectionChange = (studentId: string, isSelected: boolean) => {
     setSelectedStudents(prev => {
@@ -36,17 +36,12 @@ export default function ClassPageClient({ classe, metiers }: ClassPageClientProp
   };
 
   const selectedCount = selectedStudents.size;
-  const selectedStudentNames = useMemo(() => {
-    if (selectedCount === 0) return "";
-    return classe.eleves
-      .filter(student => selectedStudents.has(student.id))
-      .map(student => student.name)
-      .join(', ');
-  }, [selectedStudents, classe.eleves, selectedCount]);
 
   const handleStartSession = () => {
     if (selectedCount > 0) {
-      setIsSessionOpen(true);
+      const studentIds = Array.from(selectedStudents).join(',');
+      const sessionId = `session-${Date.now()}`;
+      router.push(`/session/${sessionId}?role=teacher&students=${studentIds}`);
     }
   };
 
@@ -87,12 +82,6 @@ export default function ClassPageClient({ classe, metiers }: ClassPageClientProp
           ))}
         </div>
       </main>
-      
-      <VideoSessionDialog 
-        isOpen={isSessionOpen}
-        onOpenChange={setIsSessionOpen}
-        studentNames={selectedStudentNames}
-      />
     </>
   );
 }
