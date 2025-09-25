@@ -13,7 +13,7 @@
     "typecheck": "tsc --noEmit",
     "db:seed": "prisma migrate dev && tsx prisma/seed.ts",
     "db:push": "prisma db push --accept-data-loss",
-    "migrate": "prisma db push",
+    "migrate": "prisma db push --accept-data-loss",
     "postinstall": "patch-package"
   },
   "dependencies": {
