@@ -2,7 +2,6 @@
 "use client";
 
 import type { Metier } from '@prisma/client';
-import type { LucideIcon } from 'lucide-react';
 import React from 'react';
 
 // Career prop doesn't contain non-serializable data anymore
