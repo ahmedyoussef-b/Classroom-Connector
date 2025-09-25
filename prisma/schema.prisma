@@ -1,54 +1,43 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-}
-
 generator client {
   provider = "prisma-client-js"
 }
 
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  role      Role     @default(ELEVE)
-  ambition  String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String    @id @default(cuid())
+  email      String    @unique
+  name       String?
+  role       Role
+  ambition   String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  classe     Classe?   @relation("ElevesDansClasse", fields: [classeId], references: [id])
+  classeId   String?
+  etat       EtatEleve?
+  messages   Message[]
+  reactions  Reaction[]
+  classesEnseignees Classe[] @relation("ProfesseurPourClasse")
 
-  classe   Classe?  @relation(fields: [classeId], references: [id])
-  classeId String?
-
-  messages  Message[]
-  reactions Reaction[]
-  etat      EtatEleve?
-
-  @@map("users")
+  @@index([classeId])
 }
 
 model Classe {
-  id           String  @id @default(cuid())
+  id           String     @id @default(cuid())
   nom          String
-  professeur   User    @relation(fields: [professeurId], references: [id])
+  professeur   User       @relation("ProfesseurPourClasse", fields: [professeurId], references: [id])
   professeurId String
-  eleves       User[]
-  chatroom     Chatroom @relation(fields: [chatroomId], references: [id])
-  chatroomId   String   @unique
-  
-  @@map("classes")
-}
+  eleves       User[]     @relation("ElevesDansClasse")
+  chatroom     Chatroom   @relation(fields: [chatroomId], references: [id])
+  chatroomId   String     @unique
 
-model Metier {
-  id          String   @id @default(cuid())
-  nom         String
-  description String
-  theme       Json
-  etatsEleves EtatEleve[]
-
-  @@map("metiers")
+  @@index([professeurId])
 }
 
 model EtatEleve {
@@ -58,16 +47,22 @@ model EtatEleve {
   metier     Metier? @relation(fields: [metierId], references: [id])
   metierId   String?
   isPunished Boolean @default(false)
-  
-  @@map("etats_eleves")
+
+  @@index([metierId])
+}
+
+model Metier {
+  id          String      @id @default(cuid())
+  nom         String
+  description String
+  theme       Json
+  etats       EtatEleve[]
 }
 
 model Chatroom {
   id        String    @id @default(cuid())
   messages  Message[]
   classe    Classe?
-  
-  @@map("chatrooms")
 }
 
 model Message {
@@ -80,8 +75,9 @@ model Message {
   chatroomId  String
   createdAt   DateTime   @default(now())
   reactions   Reaction[]
-  
-  @@map("messages")
+
+  @@index([senderId])
+  @@index([chatroomId])
 }
 
 model Reaction {
@@ -93,7 +89,8 @@ model Reaction {
   messageId String
   createdAt DateTime @default(now())
 
-  @@map("reactions")
+  @@unique([userId, messageId, emoji])
+  @@index([messageId])
 }
 
 enum Role {
