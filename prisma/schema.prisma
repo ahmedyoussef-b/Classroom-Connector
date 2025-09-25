@@ -1,13 +1,31 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-}
-
 generator client {
   provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                  String     @id @default(cuid())
+  email               String     @unique
+  name                String?
+  role                Role       @default(ELEVE)
+  ambition            String?
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+  classeId            String?
+  classe              Classe?    @relation("ElevesDeClasse", fields: [classeId], references: [id])
+  classesEnseignees   Classe[]   @relation("ProfesseurDeClasse")
+  etat                EtatEleve?
+  messages            Message[]
+  reactions           Reaction[]
+  sessionsEnseignees  Session[]
+  sessionsParticipees Session[]  @relation("SessionParticipants")
 }
 
 enum Role {
@@ -15,52 +33,27 @@ enum Role {
   PROFESSEUR
 }
 
-model User {
-  id                  String     @id @default(cuid())
-  email               String?    @unique
-  name                String?
-  role                Role       @default(ELEVE)
-  ambition            String?
-  classeId            String
-  createdAt           DateTime   @default(now())
-  updatedAt           DateTime   @updatedAt
-
-  classe              Classe     @relation("ElevesDeClasse", fields: [classeId], references: [id])
-  classesEnseignees   Classe[]   @relation("ProfesseurDeClasse")
-  etat                EtatEleve?
-  sessionsParticipees Session[]  @relation("SessionParticipants")
-  sessionsEnseignees  Session[]  @relation("SessionTeacher")
-  messagesEnvoyes     Message[]
-  reactions           Reaction[]
-
-  @@index([classeId])
-}
-
 model Classe {
-  id           String     @id @default(cuid())
+  id           String    @id @default(cuid())
   nom          String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
   professeurId String
-  professeur   User       @relation("ProfesseurDeClasse", fields: [professeurId], references: [id])
-  eleves       User[]     @relation("ElevesDeClasse")
-  chatroomId   String     @unique
-  chatroom     Chatroom   @relation(fields: [chatroomId], references: [id])
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-
-  @@index([professeurId])
+  professeur   User      @relation("ProfesseurDeClasse", fields: [professeurId], references: [id])
+  eleves       User[]    @relation("ElevesDeClasse")
+  chatroomId   String    @unique
+  chatroom     Chatroom  @relation(fields: [chatroomId], references: [id])
 }
 
 model EtatEleve {
-  id          String   @id @default(cuid())
-  eleveId     String   @unique
-  eleve       User     @relation(fields: [eleveId], references: [id])
-  isPunished  Boolean  @default(false)
-  metierId    String?
-  metier      Metier?  @relation(fields: [metierId], references: [id])
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@index([metierId])
+  id         String   @id @default(cuid())
+  eleveId    String   @unique
+  eleve      User     @relation(fields: [eleveId], references: [id])
+  isPunished Boolean  @default(false)
+  metierId   String?
+  metier     Metier?  @relation(fields: [metierId], references: [id])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
 model Metier {
@@ -76,25 +69,22 @@ model Metier {
 
 model Chatroom {
   id        String    @id @default(cuid())
-  messages  Message[]
-  classes   Classe[]
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
+  messages  Message[]
+  classes   Classe[]
 }
 
 model Message {
-  id          String     @id @default(cuid())
-  message     String
-  senderId    String
-  senderName  String
-  sender      User       @relation(fields: [senderId], references: [id])
-  chatroomId  String
-  chatroom    Chatroom   @relation(fields: [chatroomId], references: [id])
-  createdAt   DateTime   @default(now())
-  reactions   Reaction[]
-
-  @@index([senderId])
-  @@index([chatroomId])
+  id         String     @id @default(cuid())
+  message    String
+  createdAt  DateTime   @default(now())
+  senderId   String
+  senderName String
+  sender     User       @relation(fields: [senderId], references: [id])
+  chatroomId String
+  chatroom   Chatroom   @relation(fields: [chatroomId], references: [id])
+  reactions  Reaction[]
 }
 
 model Reaction {
@@ -107,16 +97,13 @@ model Reaction {
   createdAt DateTime @default(now())
 
   @@unique([userId, messageId, emoji])
-  @@index([messageId])
 }
 
 model Session {
   id           String   @id @default(cuid())
-  professeurId String
-  professeur   User     @relation("SessionTeacher", fields: [professeurId], references: [id])
-  participants User[]   @relation("SessionParticipants")
   createdAt    DateTime @default(now())
   endedAt      DateTime?
-
-  @@index([professeurId])
+  professeurId String
+  professeur   User     @relation(fields: [professeurId], references: [id])
+  participants User[]   @relation("SessionParticipants")
 }
