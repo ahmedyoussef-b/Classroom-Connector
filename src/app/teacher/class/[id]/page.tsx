@@ -18,8 +18,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import PageData from './page-data';
-
+import prisma from '@/lib/prisma';
+import { notFound } from 'next/navigation';
 
 interface ClassPageClientProps {
     classe: {
@@ -113,6 +113,34 @@ function ClassPageClient({ classe, metiers }: ClassPageClientProps) {
   );
 }
 
-export default function ClassPage({ params }: { params: { id: string } }) {
-  return <PageData params={params} Page={ClassPageClient} />;
+
+export default async function ClassPage({ params }: { params: { id: string } }) {
+  const classeId = params.id;
+
+  const classe = await prisma.classe.findUnique({
+    where: { id: classeId },
+    include: {
+      eleves: {
+        include: {
+          etat: true,
+        },
+      },
+    },
+  });
+
+  if (!classe) {
+    notFound();
+  }
+
+  const metiers = await prisma.metier.findMany();
+
+  // Simulate connection status for demonstration
+  const elevesWithConnection = classe.eleves.map((eleve, index) => ({
+    ...eleve,
+    isConnected: index % 2 === 0, // Alternate connected status
+  }));
+
+  const classeWithConnection = { ...classe, eleves: elevesWithConnection };
+
+  return <ClassPageClient classe={classeWithConnection} metiers={metiers} />;
 }
