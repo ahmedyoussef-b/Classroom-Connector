@@ -56,12 +56,13 @@ async function getStudentData(id: string): Promise<StudentWithStateAndCareer | n
     return student;
 }
 
-interface StudentPageProps {
+export default async function StudentPage({
+  params,
+  searchParams,
+}: {
   params: { id: string };
   searchParams: { [key: string]: string | string[] | undefined };
-}
-
-export default async function StudentPage({ params, searchParams }: StudentPageProps) {
+}) {
   const student = await getStudentData(params.id);
   const viewAs = searchParams.viewAs;
   const isTeacherView = viewAs === 'teacher';
