@@ -18,12 +18,12 @@ function Markdown({ content }: { content: string }) {
     let listType: 'ol' | 'ul' | null = null;
     let listItems: string[] = [];
 
-    const flushList = () => {
+    const flushList = (currentIndex: number) => {
         if (listItems.length > 0) {
             if (listType === 'ul') {
-                elements.push(<ul key={elements.length} className="list-disc list-inside space-y-1 my-4">{listItems.map((li, i) => <li key={i}>{li}</li>)}</ul>);
+                elements.push(<ul key={`ul-${currentIndex}`} className="list-disc list-inside space-y-1 my-4">{listItems.map((li, i) => <li key={`li-${currentIndex}-${i}`}>{li}</li>)}</ul>);
             } else if (listType === 'ol') {
-                elements.push(<ol key={elements.length} className="list-decimal list-inside space-y-1 my-4">{listItems.map((li, i) => <li key={i}>{li}</li>)}</ol>);
+                elements.push(<ol key={`ol-${currentIndex}`} className="list-decimal list-inside space-y-1 my-4">{listItems.map((li, i) => <li key={`li-${currentIndex}-${i}`}>{li}</li>)}</ol>);
             }
         }
         listItems = [];
@@ -33,36 +33,36 @@ function Markdown({ content }: { content: string }) {
     lines.forEach((line, index) => {
         line = line.trim();
         if (line.startsWith('# ')) {
-            flushList();
-            elements.push(<h2 key={index} className="text-2xl font-bold mt-6 mb-3 border-b pb-2">{line.substring(2)}</h2>);
+            flushList(index);
+            elements.push(<h2 key={`h2-${index}`} className="text-2xl font-bold mt-6 mb-3 border-b pb-2">{line.substring(2)}</h2>);
         } else if (line.startsWith('## ')) {
-            flushList();
-            elements.push(<h3 key={index} className="text-xl font-semibold mt-4 mb-2">{line.substring(3)}</h3>);
+            flushList(index);
+            elements.push(<h3 key={`h3-${index}`} className="text-xl font-semibold mt-4 mb-2">{line.substring(3)}</h3>);
         } else if (line.startsWith('### ')) {
-            flushList();
-            elements.push(<h4 key={index} className="text-lg font-semibold mt-3 mb-1">{line.substring(4)}</h4>);
+            flushList(index);
+            elements.push(<h4 key={`h4-${index}`} className="text-lg font-semibold mt-3 mb-1">{line.substring(4)}</h4>);
         } else if (line.startsWith('* ') || line.startsWith('- ')) {
             if (listType !== 'ul') {
-                flushList();
+                flushList(index);
                 listType = 'ul';
             }
             listItems.push(line.substring(2));
         } else if (line.match(/^\d+\.\s/)) {
             if (listType !== 'ol') {
-                flushList();
+                flushList(index);
                 listType = 'ol';
             }
             listItems.push(line.replace(/^\d+\.\s/, ''));
         } else if (line === '') {
-            flushList();
-            elements.push(<div key={index} className="h-4"></div>);
+            flushList(index);
+            elements.push(<div key={`div-${index}`} className="h-4"></div>);
         } else {
-            flushList();
+            flushList(index);
             const formattedLine = line.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline">$1</a>');
-            elements.push(<p key={index} dangerouslySetInnerHTML={{ __html: formattedLine }} />);
+            elements.push(<p key={`p-${index}`} dangerouslySetInnerHTML={{ __html: formattedLine }} />);
         }
     });
-    flushList(); // Add any remaining list items
+    flushList(lines.length); // Add any remaining list items
 
     return <div className="prose-sm dark:prose-invert max-w-none text-foreground">{elements}</div>;
 }
