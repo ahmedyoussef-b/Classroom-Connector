@@ -14,16 +14,15 @@ import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import Link from "next/link"
 import { LogIn, LogOut } from "lucide-react"
-import { useSession, signOut } from "next-auth/react";
+import { signOut } from "next-auth/react";
+import { User } from "next-auth";
 
-export function UserNav() {
-    const { data: session, status } = useSession();
+interface UserNavProps {
+    user?: User | null;
+}
 
-    if (status === "loading") {
-        return <div className="h-8 w-8 rounded-full bg-muted animate-pulse" />
-    }
-
-    if (!session) {
+export function UserNav({ user }: UserNavProps) {
+    if (!user) {
         return (
             <Button asChild>
                 <Link href="/login">
@@ -34,14 +33,12 @@ export function UserNav() {
         )
     }
     
-    const { user } = session;
-
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                     <Avatar className="h-8 w-8">
-                        <AvatarFallback>{user?.name?.charAt(0)}</AvatarFallback>
+                        <AvatarFallback>{user.name?.charAt(0)}</AvatarFallback>
                     </Avatar>
                 </Button>
             </DropdownMenuTrigger>

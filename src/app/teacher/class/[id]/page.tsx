@@ -1,14 +1,19 @@
 // src/app/teacher/class/[id]/page.tsx
 import prisma from '@/lib/prisma';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import ClassPageClient from './ClassPageClient';
+import { auth } from '@/lib/auth';
 
 export default async function ClassPage({ params }: { params: { id: string } }) {
   const classeId = params.id;
+  const session = await auth();
 
-  const [classe, teacher] = await Promise.all([
-    prisma.classe.findUnique({
-      where: { id: classeId },
+  if (!session || session.user.role !== 'PROFESSEUR') {
+      redirect('/login')
+  }
+
+  const classe = await prisma.classe.findUnique({
+      where: { id: classeId, professeurId: session.user.id },
       include: {
         eleves: {
           include: {
@@ -17,13 +22,9 @@ export default async function ClassPage({ params }: { params: { id: string } }) 
           orderBy: { name: 'asc' }
         },
       },
-    }),
-    prisma.user.findUnique({
-        where: { id: 'teacher-id' }
-    })
-  ]);
+    });
 
-  if (!classe || !teacher) {
+  if (!classe) {
     notFound();
   }
   
@@ -46,7 +47,7 @@ export default async function ClassPage({ params }: { params: { id: string } }) 
           isConnected: e.isConnected
       })),
     },
-    teacher,
+    teacher: session.user,
   };
 
 

@@ -2,13 +2,16 @@
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { auth } from '@/lib/auth';
 import { ArrowRight, BookOpen, UserCheck } from 'lucide-react';
 import Link from 'next/link';
 
-export default function HomePage() {
+export default async function HomePage() {
+  const session = await auth();
+
   return (
     <div className="flex flex-col min-h-screen bg-background">
-      <Header />
+      <Header user={session?.user} />
       <main className="flex-grow">
         {/* Hero Section */}
         <section className="container mx-auto px-4 py-20 sm:py-32 text-center">

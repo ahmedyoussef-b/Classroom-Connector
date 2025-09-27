@@ -1,9 +1,8 @@
-
 // src/app/student/[id]/page.tsx
 import { Header } from '@/components/Header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import prisma from '@/lib/prisma';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { Lightbulb, GraduationCap, FileUp, Video, Sparkles } from 'lucide-react';
 import { CareerThemeWrapper } from '@/components/CareerThemeWrapper';
 import { PersonalizedContent } from '@/components/PersonalizedContent';
@@ -14,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { BackButton } from '@/components/BackButton';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { TeacherCareerSelector } from '@/components/TeacherCareerSelector';
+import { auth } from '@/lib/auth';
 
 
 async function getStudentData(id: string): Promise<StudentWithStateAndCareer | null> {
@@ -63,13 +63,24 @@ export default async function StudentPage({
   params: { id: string };
   searchParams: { [key: string]: string | string[] | undefined };
 }) {
+  const session = await auth();
+  if (!session) {
+    redirect('/login');
+  }
+
   const student = await getStudentData(params.id);
   const viewAs = searchParams.viewAs;
-  const isTeacherView = viewAs === 'teacher';
+  const isTeacherView = viewAs === 'teacher' && session.user.role === 'PROFESSEUR';
 
   if (!student) {
     notFound();
   }
+  
+  // Security check: a student can only see their own page
+  if (session.user.role === 'ELEVE' && student.id !== session.user.id) {
+      notFound();
+  }
+
 
   const career = student.etat?.metier;
   const allCareers = isTeacherView ? await prisma.metier.findMany() : [];
@@ -83,13 +94,11 @@ export default async function StudentPage({
   const ambitionIcon = career ? <GraduationCap className="h-5 w-5 text-primary" /> : <Lightbulb className="h-5 w-5 text-accent" />;
   
   const activeSession = student.participations?.[0];
-  const teacher = isTeacherView ? await prisma.user.findUnique({ where: {id: 'teacher-id'}}) : null;
-
 
   return (
     <CareerThemeWrapper career={career ?? undefined}>
       <div className="flex flex-col min-h-screen">
-        <Header />
+        <Header user={session.user}/>
         <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow">
           <div className="flex items-center gap-4 mb-8">
             <BackButton />

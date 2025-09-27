@@ -35,7 +35,7 @@ function ReactionBubble({ emoji, count, hasReacted }: { emoji: string, count: nu
 }
 
 function Message({ msg, currentUserId, onReaction }: { msg: MessageWithReactions, currentUserId: string, onReaction: (emoji: string) => void }) {
-    const isTeacher = msg.senderId === 'teacher-id'; // Assume a fixed teacher ID for now
+    const isCurrentUser = msg.senderId === currentUserId;
     const reactionsByEmoji: { [key: string]: string[] } = {};
     
     msg.reactions.forEach(r => {
@@ -49,14 +49,14 @@ function Message({ msg, currentUserId, onReaction }: { msg: MessageWithReactions
 
     return (
         <div className="group relative">
-            <div className={cn("flex items-start gap-3", isTeacher ? "justify-end" : "justify-start")}>
-                {!isTeacher && (
+            <div className={cn("flex items-start gap-3", isCurrentUser ? "justify-end" : "justify-start")}>
+                {!isCurrentUser && (
                     <Avatar className="h-8 w-8">
                         <AvatarFallback>{msg.senderName?.charAt(0)}</AvatarFallback>
                     </Avatar>
                 )}
                 <div className="flex flex-col gap-1 items-end">
-                    <div className={cn("max-w-xs rounded-lg p-3 text-sm relative", isTeacher ? "bg-primary text-primary-foreground" : "bg-muted")}>
+                    <div className={cn("max-w-xs rounded-lg p-3 text-sm relative", isCurrentUser ? "bg-primary text-primary-foreground" : "bg-muted")}>
                         <p className="font-bold">{msg.senderName}</p>
                         <p className="mt-1">{msg.message}</p>
                         <p className="mt-2 text-xs opacity-60 text-right">{format(new Date(msg.createdAt), 'p')}</p>
@@ -69,9 +69,9 @@ function Message({ msg, currentUserId, onReaction }: { msg: MessageWithReactions
                         </div>
                     )}
                 </div>
-                {isTeacher && (
-                    <Avatar className="h-8 w-8">
-                        <AvatarFallback>P</AvatarFallback>
+                {isCurrentUser && (
+                     <Avatar className="h-8 w-8">
+                        <AvatarFallback>{msg.senderName?.charAt(0)}</AvatarFallback>
                     </Avatar>
                 )}
             </div>
@@ -82,7 +82,7 @@ function Message({ msg, currentUserId, onReaction }: { msg: MessageWithReactions
                         size="icon"
                         className={cn(
                             "absolute top-0 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity",
-                            isTeacher ? "left-0 -translate-x-full" : "right-0 translate-x-full"
+                            isCurrentUser ? "left-0 -translate-x-full" : "right-0 translate-x-full"
                         )}
                     >
                         <SmilePlus className="h-4 w-4" />
@@ -106,12 +106,11 @@ function SubmitButton() {
 }
 
 
-export function ChatSheet({ chatroomId }: { chatroomId: string }) {
+export function ChatSheet({ chatroomId, userId }: { chatroomId: string, userId: string }) {
   const [messages, setMessages] = useState<MessageWithReactions[]>([]);
   const [isPending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
-  // In a real app, you'd get this from auth context
-  const currentUserId = 'teacher-id'; 
+  const currentUserId = userId; 
 
   useEffect(() => {
     const fetchMessages = () => {
@@ -208,7 +207,6 @@ export function ChatSheet({ chatroomId }: { chatroomId: string }) {
             action={handleSendMessage} 
             className="flex gap-2 border-t pt-4"
           >
-            <input type="hidden" name="senderId" value={currentUserId} />
             <input type="hidden" name="chatroomId" value={chatroomId} />
             <Input
               name="message"

@@ -7,6 +7,8 @@ import Link from 'next/link';
 import prisma from '@/lib/prisma';
 import { AddClassForm } from '@/components/AddClassForm';
 import { User, Classe, Chatroom } from '@prisma/client';
+import { auth } from '@/lib/auth';
+import { redirect } from 'next/navigation';
 
 // Define a more accurate type for the teacher data
 type TeacherWithClasses = User & {
@@ -21,7 +23,7 @@ type TeacherWithClasses = User & {
 
 async function getTeacherData(teacherId: string): Promise<TeacherWithClasses | null> {
   return prisma.user.findUnique({
-    where: { id: teacherId },
+    where: { id: teacherId, role: 'PROFESSEUR' },
     include: {
       classesEnseignees: {
         include: {
@@ -36,14 +38,18 @@ async function getTeacherData(teacherId: string): Promise<TeacherWithClasses | n
 }
 
 export default async function TeacherPage() {
-  // Hardcoded teacher ID for demonstration
-  const teacher = await getTeacherData('teacher-id');
+  const session = await auth();
+  if (!session || session.user.role !== 'PROFESSEUR') {
+      redirect('/login');
+  }
+
+  const teacher = await getTeacherData(session.user.id);
   const classes = teacher?.classesEnseignees || [];
   const mainChatroomId = classes.length > 0 ? classes[0].chatroomId : null;
 
   return (
     <>
-      <Header user={teacher} />
+      <Header user={session.user} />
       <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
           <div>
@@ -51,8 +57,8 @@ export default async function TeacherPage() {
             <p className="text-muted-foreground">Gérez vos classes et leur parcours d'apprentissage.</p>
           </div>
           <div className="flex items-center gap-2">
-            <AddClassForm teacherId="teacher-id" />
-            {mainChatroomId && <ChatSheet chatroomId={mainChatroomId} />}
+            <AddClassForm teacherId={session.user.id} />
+            {mainChatroomId && <ChatSheet chatroomId={mainChatroomId} userId={session.user.id}/>}
           </div>
         </div>
 
