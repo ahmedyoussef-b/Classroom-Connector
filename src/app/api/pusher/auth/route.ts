@@ -3,41 +3,69 @@ import { pusherServer } from '@/lib/pusher/server';
 import { getAuthSession } from '@/lib/auth';
 import { NextRequest, NextResponse } from 'next/server';
 
-export async function POST(req: NextRequest) {
-  console.log('🔐 [PUSHER-AUTH] === DEBUT AUTHENTIFICATION ===');
+export async function POST(request: NextRequest) {
   try {
+    console.log('🔐 [PUSHER-AUTH] === DEBUT ===');
+    
     const session = await getAuthSession();
-    console.log('🔐 [PUSHER-AUTH] Session:', session ? '✅ Trouvée' : '❌ Non trouvée');
+    console.log('🔐 [PUSHER-AUTH] Session user:', session?.user?.id);
     
     if (!session?.user?.id) {
-      console.error('❌ [PUSHER-AUTH] Authentification échouée: Non autorisé (pas de session)');
-      return new NextResponse('Unauthorized', { status: 401 });
+      console.log('❌ [PUSHER-AUTH] No session');
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
 
-    const data = await req.text();
-    const params = new URLSearchParams(data);
+    const bodyText = await request.text();
+    console.log('🔐 [PUSHER-AUTH] Raw body:', bodyText);
     
+    const params = new URLSearchParams(bodyText);
     const socketId = params.get('socket_id');
-    const channel = params.get('channel_name');
+    const channelName = params.get('channel_name');
 
-    console.log('🔐 [PUSHER-AUTH] Données reçues:', { 
-      socketId,
-      channel,
-      userId: session.user.id 
+    console.log('🔐 [PUSHER-AUTH] Params:', { socketId, channelName });
+
+    if (!socketId || !channelName) {
+      console.log('❌ [PUSHER-AUTH] Missing params');
+      return new Response(JSON.stringify({ error: 'Missing socket_id or channel_name' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Autoriser uniquement les canaux privés de chatroom
+    if (!channelName.startsWith('private-chatroom-')) {
+      console.log('❌ [PUSHER-AUTH] Invalid channel name');
+      return new Response(JSON.stringify({ error: 'Invalid channel' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    const authResponse = pusherServer.authorizeChannel(
+      socketId, 
+      channelName, 
+      {
+        user_id: session.user.id,
+        user_info: {
+          name: session.user.name || 'User',
+          email: session.user.email || 'user@example.com',
+        },
+      }
+    );
+
+    console.log('✅ [PUSHER-AUTH] Success, returning auth');
+    return new Response(JSON.stringify(authResponse), {
+      headers: { 'Content-Type': 'application/json' }
     });
 
-    if (!socketId || !channel) {
-       console.error('❌ [PUSHER-AUTH] Authentification échouée: Mauvaise requête (socketId ou channel manquant)');
-      return new NextResponse('Bad Request', { status: 400 });
-    }
-
-    // Pour les canaux privés, l'authentification est suffisante.
-    const authResponse = pusherServer.authorizeChannel(socketId, channel);
-    
-    console.log(`✅ [PUSHER-AUTH] Autorisation réussie pour l'utilisateur ${session.user.id} sur le canal ${channel}`);
-    return new NextResponse(JSON.stringify(authResponse));
   } catch (error) {
-    console.error('💥 [PUSHER-AUTH] Erreur critique durant l\'authentification:', error);
-    return new NextResponse('Internal Server Error', { status: 500 });
+    console.error('❌ [PUSHER-AUTH] Error:', error);
+    return new Response(JSON.stringify({ error: 'Internal server error' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 }

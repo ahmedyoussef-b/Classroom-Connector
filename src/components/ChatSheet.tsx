@@ -155,13 +155,8 @@ export function ChatSheet({ chatroomId, userId }: { chatroomId: string, userId: 
     });
 
     pusherClient.connection.bind('error', (error: any) => {
-        console.error('❌ [PUSHER] Connection error details:', {
-          type: error.type,
-          code: error.code,
-          message: error.message,
-          data: error.data,
-          error: error.error
-        });
+        console.error('❌ [PUSHER] Connection error FULL DETAILS:', JSON.stringify(error, null, 2));
+        console.error('❌ [PUSHER] Error data content:', error.data);
     });
   }, []);
 
