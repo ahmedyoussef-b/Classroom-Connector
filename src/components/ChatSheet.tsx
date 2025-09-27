@@ -158,6 +158,13 @@ export function ChatSheet({ chatroomId, userId }: { chatroomId: string, userId: 
     pusherClient.connection.bind('error', (error: any) => {
         console.error('❌ [PUSHER] Connection error FULL DETAILS:', JSON.stringify(error, null, 2));
     });
+    pusherClient.connection.bind('disconnected', () => {
+        console.log('🔌 Pusher disconnected - attempting reconnect');
+    });
+
+    pusherClient.connection.bind('reconnecting', () => {
+        console.log('🔄 Pusher reconnecting...');
+    });
   }, []);
 
   useEffect(() => {
@@ -181,31 +188,29 @@ export function ChatSheet({ chatroomId, userId }: { chatroomId: string, userId: 
     fetchMessages();
   }, [chatroomId, toast, scrollToBottom]);
   
-  const handleNewMessage = useCallback((newMessage: MessageWithReactions) => {
+ const handleNewMessage = useCallback((newMessage: MessageWithReactions) => {
     console.log("📨 [CLIENT] Received 'new-message':", newMessage);
     setMessages(prev => {
-        const isOwnPendingMessage = newMessage.senderId === currentUserId;
-        if (isOwnPendingMessage) {
-            // Find and replace the pending message with the confirmed one from the server
-            const newMessages = prev.map(msg => 
-                (msg.status === 'pending' && msg.senderId === currentUserId) ? newMessage : msg
-            );
-            // If no pending message was found (e.g., another tab), add it
-            if (!newMessages.some(m => m.id === newMessage.id)) {
-                 return [...newMessages, newMessage];
-            }
+        // Find and replace the pending message if it exists
+        const pendingMessageIndex = prev.findIndex(msg => msg.status === 'pending' && msg.senderId === newMessage.senderId);
+        if (pendingMessageIndex !== -1) {
+            const newMessages = [...prev];
+            newMessages[pendingMessageIndex] = newMessage;
             return newMessages;
-        } else {
-             // For messages from other users, just add them if they don't exist
-            const messageExists = prev.some(msg => msg.id === newMessage.id);
-            if (!messageExists) {
+        }
+
+        // Otherwise, if the message is not from the current user, just add it if it's new
+        if (newMessage.senderId !== currentUserId) {
+            if (!prev.some(msg => msg.id === newMessage.id)) {
                 return [...prev, newMessage];
             }
         }
+        
         return prev;
     });
     scrollToBottom();
-  }, [currentUserId, scrollToBottom]);
+}, [currentUserId, scrollToBottom]);
+
 
   const handleReactionUpdate = useCallback(({ messageId, reactions }: { messageId: string, reactions: Reaction[] }) => {
     console.log(`👍 [CLIENT] Received 'reaction-update' for message ${messageId}:`, reactions);
@@ -219,13 +224,21 @@ export function ChatSheet({ chatroomId, userId }: { chatroomId: string, userId: 
   useEffect(() => {
     if (!chatroomId) return;
 
-    const channelName = `private-chatroom-${chatroomId}`;
+    const channelName = `presence-chatroom-${chatroomId}`;
     try {
         console.log(`🔌 [CLIENT] Subscribing to channel: ${channelName}`);
         const channel = pusherClient.subscribe(channelName);
         
         channel.bind('pusher:subscription_succeeded', () => {
             console.log(`✅ [CLIENT] Successfully subscribed to ${channelName}`);
+        });
+
+        channel.bind('pusher:member_added', (member: any) => {
+            console.log('👤 User joined:', member.info);
+        });
+
+        channel.bind('pusher:member_removed', (member: any) => {
+            console.log('👤 User left:', member.info);
         });
         
         channel.bind('pusher:subscription_error', (status: any) => {
@@ -267,7 +280,6 @@ export function ChatSheet({ chatroomId, userId }: { chatroomId: string, userId: 
   
   const handleSendMessage = async (formData: FormData, tempId: string) => {
     try {
-        // The server action will trigger a pusher event that updates the UI
         await sendMessage(formData);
     } catch (error) {
         console.error("Failed to send message", error);

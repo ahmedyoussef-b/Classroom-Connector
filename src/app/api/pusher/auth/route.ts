@@ -37,8 +37,8 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Autoriser les canaux privés uniquement
-    if (!channelName.startsWith('private-chatroom-')) {
+    // Autoriser les canaux de présence uniquement
+    if (!channelName.startsWith('presence-chatroom-')) {
       console.log('❌ [PUSHER-AUTH] Type de canal non autorisé:', channelName);
       return new Response(JSON.stringify({ error: 'Invalid channel type' }), {
         status: 403,
@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    console.log('🔐 [PUSHER-AUTH] Tentative d\'autorisation pour canal privé...');
+    console.log('🔐 [PUSHER-AUTH] Tentative d\'autorisation pour canal de présence...');
     
     const authResponse = pusherServer.authorizeChannel(socketId, channelName, {
       user_id: session.user.id,
