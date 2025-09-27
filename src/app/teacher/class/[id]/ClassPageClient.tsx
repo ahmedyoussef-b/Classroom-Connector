@@ -104,7 +104,7 @@ export default function ClassPageClient({ classe, teacher }: ClassPageClientProp
             </div>
             <div className="flex items-center gap-2">
                 <AddStudentForm classeId={classe.id} />
-                 {classe.chatroomId && <ChatSheet chatroomId={classe.chatroomId} userId={teacher.id} />}
+                 {classe.chatroomId && teacher.id && <ChatSheet chatroomId={classe.chatroomId} userId={teacher.id} />}
                 {selectedCount > 0 && (
                     <Button 
                       onClick={handleStartSession} 
