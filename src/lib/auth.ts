@@ -32,7 +32,7 @@ export const authOptions: NextAuthConfig = {
         const isValid = credentials.password === 'password'; // DEMO ONLY
 
         if (isValid) {
-          return user;
+          return user as any;
         }
 
         return null;
@@ -43,7 +43,7 @@ export const authOptions: NextAuthConfig = {
     strategy: 'jwt',
   },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user }: { token: JWT; user?: User | undefined }) {
       if (user) {
         token.id = user.id;
         const dbUser = await prisma.user.findUnique({
@@ -56,7 +56,7 @@ export const authOptions: NextAuthConfig = {
       }
       return token;
     },
-    async session({ session, token }) {
+    async session({ session, token }: { session: Session; token: JWT }) {
       if (session.user) {
         session.user.id = token.id as string;
         session.user.role = token.role as Role;
