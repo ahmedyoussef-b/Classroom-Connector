@@ -2,13 +2,13 @@
 
 import prisma from './prisma';
 import { revalidatePath } from 'next/cache';
-import { auth } from './auth';
+import { getAuthSession } from './auth';
 import { pusherServer } from './pusher/server';
 import type { MessageWithReactions } from './types';
 
 
 async function getCurrentUser() {
-    const session = await auth();
+    const session = await getAuthSession();
     if (!session?.user?.id) {
         throw new Error("Utilisateur non authentifié");
     }

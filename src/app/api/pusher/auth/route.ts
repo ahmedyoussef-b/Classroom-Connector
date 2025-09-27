@@ -1,12 +1,12 @@
 // src/app/api/pusher/auth/route.ts
 import { pusherServer } from '@/lib/pusher/server';
-import { auth } from '@/lib/auth';
+import { getAuthSession } from '@/lib/auth';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
   console.log('🔒 Pusher auth request received');
   try {
-    const session = await auth();
+    const session = await getAuthSession();
     
     if (!session?.user?.id) {
       console.error('🚫 Pusher auth failed: Unauthorized (no session)');

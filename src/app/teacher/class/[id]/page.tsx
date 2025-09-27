@@ -2,11 +2,11 @@
 import prisma from '@/lib/prisma';
 import { notFound, redirect } from 'next/navigation';
 import ClassPageClient from './ClassPageClient';
-import { auth } from '@/lib/auth';
+import { getAuthSession } from '@/lib/auth';
 
 export default async function ClassPage({ params }: { params: { id: string } }) {
   const classeId = params.id;
-  const session = await auth();
+  const session = await getAuthSession();
 
   if (!session || session.user.role !== 'PROFESSEUR') {
       redirect('/login')

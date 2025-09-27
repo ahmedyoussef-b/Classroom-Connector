@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { BackButton } from '@/components/BackButton';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { TeacherCareerSelector } from '@/components/TeacherCareerSelector';
-import { auth } from '@/lib/auth';
+import { getAuthSession } from '@/lib/auth';
 
 
 async function getStudentData(id: string): Promise<StudentWithStateAndCareer | null> {
@@ -63,7 +63,7 @@ export default async function StudentPage({
   params: { id: string };
   searchParams: { [key: string]: string | string[] | undefined };
 }) {
-  const session = await auth();
+  const session = await getAuthSession();
   if (!session) {
     redirect('/login');
   }

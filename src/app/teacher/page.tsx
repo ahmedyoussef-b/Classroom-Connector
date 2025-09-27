@@ -7,7 +7,7 @@ import Link from 'next/link';
 import prisma from '@/lib/prisma';
 import { AddClassForm } from '@/components/AddClassForm';
 import { User, Classe, Chatroom } from '@prisma/client';
-import { auth } from '@/lib/auth';
+import { getAuthSession } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 
 // Define a more accurate type for the teacher data
@@ -38,7 +38,7 @@ async function getTeacherData(teacherId: string): Promise<TeacherWithClasses | n
 }
 
 export default async function TeacherPage() {
-  const session = await auth();
+  const session = await getAuthSession();
   if (!session || session.user.role !== 'PROFESSEUR') {
       redirect('/login');
   }

@@ -6,7 +6,7 @@ import Link from 'next/link';
 import prisma from '@/lib/prisma';
 import * as Icons from 'lucide-react';
 import { BackButton } from '@/components/BackButton';
-import { auth } from '@/lib/auth';
+import { getAuthSession } from '@/lib/auth';
 
 type IconName = keyof typeof Icons;
 
@@ -19,7 +19,7 @@ const Icon = ({ name, ...props }: { name: IconName } & Icons.LucideProps) => {
 
 export default async function CareersPage() {
   const careers = await prisma.metier.findMany();
-  const session = await auth();
+  const session = await getAuthSession();
 
   return (
     <>
