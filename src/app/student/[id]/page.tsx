@@ -14,6 +14,7 @@ import { BackButton } from '@/components/BackButton';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { TeacherCareerSelector } from '@/components/TeacherCareerSelector';
 import { getAuthSession } from '@/lib/auth';
+import { ChatSheet } from '@/components/ChatSheet';
 
 
 async function getStudentData(id: string): Promise<StudentWithStateAndCareer | null> {
@@ -94,11 +95,16 @@ export default async function StudentPage({
   const ambitionIcon = career ? <GraduationCap className="h-5 w-5 text-primary" /> : <Lightbulb className="h-5 w-5 text-accent" />;
   
   const activeSession = student.sessionsParticipees?.[0];
+  const chatroomId = student.classe?.chatroomId;
 
   return (
     <CareerThemeWrapper career={career ?? undefined}>
       <div className="flex flex-col min-h-screen">
-        <Header user={session.user}/>
+        <Header user={session.user}>
+            {chatroomId && (
+                <ChatSheet chatroomId={chatroomId} userId={session.user.id} />
+            )}
+        </Header>
         <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow">
           <div className="flex items-center gap-4 mb-8">
             <BackButton />
