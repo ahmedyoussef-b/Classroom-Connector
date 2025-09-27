@@ -1,6 +1,5 @@
 // src/lib/auth.ts
 import NextAuth from 'next-auth';
-import { PrismaAdapter } from '@auth/prisma-adapter';
 import type { NextAuthConfig } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import prisma from './prisma';
@@ -9,7 +8,6 @@ import type { Session, User } from 'next-auth';
 import { Role } from '@prisma/client';
 
 export const authOptions: NextAuthConfig = {
-  adapter: PrismaAdapter(prisma),
   providers: [
     CredentialsProvider({
       name: 'Credentials',
