@@ -41,13 +41,15 @@ function ReactionBubble({ emoji, count, hasReacted }: { emoji: string, count: nu
 
 function Message({ msg, currentUserId, onReaction, onResend }: { msg: MessageWithReactions, currentUserId: string, onReaction: (emoji: string) => void, onResend: () => void }) {
     const isCurrentUser = msg.senderId === currentUserId;
-    const reactionsByEmoji: { [key: string]: string[] } = {};
+    const reactionsByEmoji: { [key: string]: { users: string[], userNames: string[] } } = {};
     
     msg.reactions.forEach(r => {
         if (!reactionsByEmoji[r.emoji]) {
-            reactionsByEmoji[r.emoji] = [];
+            reactionsByEmoji[r.emoji] = { users: [], userNames: [] };
         }
-        reactionsByEmoji[r.emoji].push(r.userId);
+        reactionsByEmoji[r.emoji].users.push(r.userId);
+        // Assuming we pass userNames along with reactions in the future
+        // For now, we can't display names easily without more data
     });
 
     const reactionEntries = Object.entries(reactionsByEmoji);
@@ -61,15 +63,15 @@ function Message({ msg, currentUserId, onReaction, onResend }: { msg: MessageWit
                         <AvatarFallback>{msg.senderName?.charAt(0)}</AvatarFallback>
                     </Avatar>
                 )}
-                <div className="flex flex-col gap-1 items-end max-w-xs">
+                <div className="flex flex-col gap-1 max-w-xs">
                     <div className={cn("rounded-lg p-3 text-sm relative", isCurrentUser ? "bg-primary text-primary-foreground" : "bg-muted")}>
                         {!isCurrentUser && <p className="font-bold">{msg.senderName}</p>}
                         <p className="mt-1 whitespace-pre-wrap">{msg.message}</p>
-                        <p className="mt-2 text-xs opacity-60 text-right">{messageTime}</p>
+                        <p className={cn("mt-2 text-xs opacity-60", isCurrentUser ? 'text-right' : 'text-left')}>{messageTime}</p>
                     </div>
                      {reactionEntries.length > 0 && (
-                        <div className="flex gap-1 flex-wrap justify-end">
-                            {reactionEntries.map(([emoji, users]) => (
+                        <div className={cn("flex gap-1 flex-wrap", isCurrentUser ? 'justify-end' : 'justify-start')}>
+                            {reactionEntries.map(([emoji, { users }]) => (
                                <TooltipProvider key={emoji} delayDuration={100}>
                                 <Tooltip>
                                     <TooltipTrigger>
@@ -78,7 +80,8 @@ function Message({ msg, currentUserId, onReaction, onResend }: { msg: MessageWit
                                         </div>
                                     </TooltipTrigger>
                                     <TooltipContent>
-                                        <p>{users.join(', ')}</p>
+                                        {/* This is a simplification. For full names, we'd need another query. */}
+                                        <p>Réagi par {users.length} personne(s)</p>
                                     </TooltipContent>
                                 </Tooltip>
                                </TooltipProvider>
@@ -93,9 +96,9 @@ function Message({ msg, currentUserId, onReaction, onResend }: { msg: MessageWit
                 )}
             </div>
             {msg.status === 'failed' && (
-                 <div className={cn("absolute top-0 flex items-center gap-2", isCurrentUser ? "left-0 -translate-x-full" : "right-0 translate-x-full")}>
+                 <div className={cn("absolute top-0 flex items-center gap-2", isCurrentUser ? "left-0 -translate-x-full pr-2" : "right-0 translate-x-full pl-2")}>
                      <AlertCircle className="h-4 w-4 text-destructive" />
-                     <Button variant="link" size="sm" className="text-destructive" onClick={onResend}>
+                     <Button variant="link" size="sm" className="text-destructive p-0" onClick={onResend}>
                          Renvoyer
                      </Button>
                  </div>
@@ -107,7 +110,7 @@ function Message({ msg, currentUserId, onReaction, onResend }: { msg: MessageWit
                         size="icon"
                         className={cn(
                             "absolute top-0 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity",
-                            isCurrentUser ? "left-0 -translate-x-full" : "right-0 translate-x-full"
+                            isCurrentUser ? "left-0 -translate-x-1/2" : "right-0 translate-x-1/2"
                         )}
                     >
                         <SmilePlus className="h-4 w-4" />
@@ -149,18 +152,17 @@ export function ChatSheet({ chatroomId, userId }: { chatroomId: string, userId: 
   }, []);
 
   useEffect(() => {
-    // Test de connexion Pusher
     pusherClient.connection.bind('connected', () => {
         console.log('✅ [PUSHER] Connected to Pusher');
     });
-
     pusherClient.connection.bind('error', (error: any) => {
         console.error('❌ [PUSHER] Connection error FULL DETAILS:', JSON.stringify(error, null, 2));
-        console.error('❌ [PUSHER] Error data content:', error.data);
     });
   }, []);
 
   useEffect(() => {
+    if (!chatroomId) return;
+    
     const fetchMessages = () => {
       startTransition(async () => {
         try {
@@ -182,23 +184,28 @@ export function ChatSheet({ chatroomId, userId }: { chatroomId: string, userId: 
   const handleNewMessage = useCallback((newMessage: MessageWithReactions) => {
     console.log("📨 [CLIENT] Received 'new-message':", newMessage);
     setMessages(prev => {
-        // If the message is from the current user and it was pending, update it.
-        // Otherwise, add the new message.
-        const pendingMessageIndex = prev.findIndex(msg => msg.status === 'pending' && msg.senderId === newMessage.senderId);
-        if (pendingMessageIndex !== -1) {
-            const newMessages = [...prev];
-            newMessages[pendingMessageIndex] = newMessage;
+        const isOwnPendingMessage = newMessage.senderId === currentUserId;
+        if (isOwnPendingMessage) {
+            // Find and replace the pending message with the confirmed one from the server
+            const newMessages = prev.map(msg => 
+                (msg.status === 'pending' && msg.senderId === currentUserId) ? newMessage : msg
+            );
+            // If no pending message was found (e.g., another tab), add it
+            if (!newMessages.some(m => m.id === newMessage.id)) {
+                 return [...newMessages, newMessage];
+            }
             return newMessages;
-        }
-
-        const messageExists = prev.some(msg => msg.id === newMessage.id);
-        if (!messageExists) {
-            return [...prev, newMessage];
+        } else {
+             // For messages from other users, just add them if they don't exist
+            const messageExists = prev.some(msg => msg.id === newMessage.id);
+            if (!messageExists) {
+                return [...prev, newMessage];
+            }
         }
         return prev;
     });
     scrollToBottom();
-  }, [scrollToBottom]);
+  }, [currentUserId, scrollToBottom]);
 
   const handleReactionUpdate = useCallback(({ messageId, reactions }: { messageId: string, reactions: Reaction[] }) => {
     console.log(`👍 [CLIENT] Received 'reaction-update' for message ${messageId}:`, reactions);
@@ -245,16 +252,22 @@ export function ChatSheet({ chatroomId, userId }: { chatroomId: string, userId: 
   }, [chatroomId, handleNewMessage, handleReactionUpdate, toast]);
 
   const handleReaction = (messageId: string, emoji: string) => {
-    // Optimistic update for reactions could be added here, but for now we rely on the server push
     startTransition(async () => {
-        await toggleReaction(messageId, emoji);
+        try {
+           await toggleReaction(messageId, emoji);
+        } catch (error) {
+            toast({
+                variant: 'destructive',
+                title: 'Erreur',
+                description: 'Impossible d\'ajouter la réaction.'
+            })
+        }
     });
   };
   
   const handleSendMessage = async (formData: FormData, tempId: string) => {
     try {
-        // We don't need to do anything with the returned message here
-        // because the pusher event will update the state
+        // The server action will trigger a pusher event that updates the UI
         await sendMessage(formData);
     } catch (error) {
         console.error("Failed to send message", error);
@@ -319,6 +332,8 @@ export function ChatSheet({ chatroomId, userId }: { chatroomId: string, userId: 
                         const formData = new FormData();
                         formData.append('message', msg.message);
                         formData.append('chatroomId', msg.chatroomId);
+                        // Optimistically set to pending again
+                        setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, status: 'pending' } : m));
                         handleSendMessage(formData, msg.id)
                     }}
                 />
