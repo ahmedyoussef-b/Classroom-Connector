@@ -11,12 +11,12 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Button } from './ui/button';
-import { MessageCircle, Send, SmilePlus, Clock, AlertCircle, Users } from 'lucide-react';
+import { MessageCircle, Send, SmilePlus, Clock, AlertCircle } from 'lucide-react';
 import { Input } from './ui/input';
 import { Avatar, AvatarFallback } from './ui/avatar';
 import { ScrollArea } from './ui/scroll-area';
 import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
+import { format }s from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { EmojiPicker } from './EmojiPicker';
 import { getMessages, sendMessage, toggleReaction } from '@/lib/actions';
@@ -26,6 +26,7 @@ import { pusherClient } from '@/lib/pusher/client';
 import { useToast } from '@/hooks/use-toast';
 import { useSession } from 'next-auth/react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
+import { OnlineUsers } from './OnlineUsers';
 
 function ReactionBubble({ emoji, count, hasReacted }: { emoji: string, count: number, hasReacted: boolean }) {
     return (
@@ -133,7 +134,6 @@ function SubmitButton() {
 
 export function ChatSheet({ chatroomId, userId }: { chatroomId: string, userId: string }) {
   const [messages, setMessages] = useState<MessageWithReactions[]>([]);
-  const [onlineUsers, setOnlineUsers] = useState<any[]>([]);
   const [isPending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -147,21 +147,6 @@ export function ChatSheet({ chatroomId, userId }: { chatroomId: string, userId: 
             scrollAreaRef.current.scrollTo({ top: scrollAreaRef.current.scrollHeight, behavior });
         }
     }, 100);
-  }, []);
-
-  useEffect(() => {
-    pusherClient.connection.bind('connected', () => {
-        console.log('✅ [PUSHER] Connected to Pusher');
-    });
-    pusherClient.connection.bind('error', (error: any) => {
-        console.error('❌ [PUSHER] Connection error FULL DETAILS:', JSON.stringify(error, null, 2));
-    });
-    pusherClient.connection.bind('disconnected', () => {
-        console.log('🔌 Pusher disconnected - attempting reconnect');
-    });
-    pusherClient.connection.bind('reconnecting', () => {
-        console.log('🔄 Pusher reconnecting...');
-    });
   }, []);
 
   useEffect(() => {
@@ -186,34 +171,29 @@ export function ChatSheet({ chatroomId, userId }: { chatroomId: string, userId: 
   }, [chatroomId, toast, scrollToBottom]);
   
  const handleNewMessage = useCallback((newMessage: MessageWithReactions) => {
-    console.log("📨 [CLIENT] Received 'new-message':", newMessage);
     setMessages(prev => {
         const pendingMessageIndex = prev.findIndex(msg => msg.status === 'pending' && msg.senderId === newMessage.senderId);
         
         if (pendingMessageIndex !== -1) {
-            // Replace the pending message with the confirmed one from the server
             const newMessages = [...prev];
             newMessages[pendingMessageIndex] = newMessage;
             return newMessages;
         } else if (!prev.some(msg => msg.id === newMessage.id)) {
-            // If it's a new message from someone else (or self, if no pending), add it
             return [...prev, newMessage];
         }
         
-        return prev; // If message already exists, do nothing
+        return prev;
     });
     scrollToBottom();
 }, [scrollToBottom]);
 
 
   const handleReactionUpdate = useCallback((data: { messageId: string, reaction: ReactionWithUser, action: 'added' | 'removed' }) => {
-    console.log(`👍 [CLIENT] Received 'reaction-update' for message ${data.messageId}:`, data);
     setMessages(prev => 
         prev.map(msg => {
             if (msg.id === data.messageId) {
                 let newReactions = [...msg.reactions];
                 if (data.action === 'added') {
-                    // Avoid adding duplicates
                     if (!newReactions.some(r => r.id === data.reaction.id)) {
                         newReactions.push(data.reaction);
                     }
@@ -232,23 +212,7 @@ export function ChatSheet({ chatroomId, userId }: { chatroomId: string, userId: 
 
     const channelName = `presence-chatroom-${chatroomId}`;
     try {
-        console.log(`🔌 [CLIENT] Subscribing to channel: ${channelName}`);
         const channel = pusherClient.subscribe(channelName);
-        
-        channel.bind('pusher:subscription_succeeded', (members: any) => {
-            console.log(`✅ [CLIENT] Successfully subscribed to ${channelName}`);
-            setOnlineUsers(Object.values(members.members));
-        });
-
-        channel.bind('pusher:member_added', (member: any) => {
-            console.log('👤 User joined:', member.info);
-            setOnlineUsers(prev => [...prev, member.info]);
-        });
-
-        channel.bind('pusher:member_removed', (member: any) => {
-            console.log('👤 User left:', member.info);
-            setOnlineUsers(prev => prev.filter(u => u.email !== member.info.email));
-        });
         
         channel.bind('pusher:subscription_error', (status: any) => {
             console.error(`🚫 [CLIENT] Failed to subscribe to ${channelName}:`, status);
@@ -258,8 +222,6 @@ export function ChatSheet({ chatroomId, userId }: { chatroomId: string, userId: 
         channel.bind('reaction-update', handleReactionUpdate);
         
         return () => {
-            console.log(`🔌 [CLIENT] Unsubscribing from channel: ${channelName}`);
-            setOnlineUsers([]);
             channel.unbind_all();
             pusherClient.unsubscribe(channelName);
         };
@@ -352,12 +314,13 @@ export function ChatSheet({ chatroomId, userId }: { chatroomId: string, userId: 
       <SheetContent className="flex flex-col w-full sm:max-w-lg">
         <SheetHeader>
           <SheetTitle>Chat de la classe</SheetTitle>
-          <SheetDescription className="flex items-center gap-2">
-            <Users className="h-4 w-4" /> {onlineUsers.length} personne(s) en ligne.
+          <SheetDescription>
+            Discussion en temps réel avec vos élèves.
           </SheetDescription>
         </SheetHeader>
         <div className="flex-1 flex flex-col overflow-hidden">
-          <ScrollArea className="flex-1 pr-4 -mr-4" ref={scrollAreaRef}>
+          {chatroomId && <OnlineUsers chatroomId={chatroomId} />}
+          <ScrollArea className="flex-1 pr-4 -mr-4 mt-4">
             <div className="space-y-6 py-4">
               {messages.map((msg) => (
                 <Message 
