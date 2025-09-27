@@ -8,11 +8,6 @@ if (!pusherKey) {
   throw new Error('NEXT_PUBLIC_PUSHER_KEY is required');
 }
 
-console.log('🔧 [PUSHER-CLIENT] Initialisation avec:', {
-  key: pusherKey.substring(0, 10) + '...',
-  cluster: pusherCluster
-});
-
 export const pusherClient = new PusherClient(pusherKey, {
   cluster: pusherCluster || 'mt1',
   authEndpoint: '/api/pusher/auth',
