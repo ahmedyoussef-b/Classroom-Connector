@@ -2,15 +2,14 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { signIn } from 'next-auth/react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
-import { AlertCircle } from 'lucide-react';
-import { getStudentByEmail } from '@/lib/actions';
-
+import { AlertCircle, Loader2 } from 'lucide-react';
 
 interface LoginFormProps {
   initialEmail?: string;
@@ -19,9 +18,11 @@ interface LoginFormProps {
 
 export function LoginForm({ initialEmail = '', emailPlaceholder = 'votre@email.com' }: LoginFormProps) {
   const [email, setEmail] = useState(initialEmail);
-  const [password, setPassword] = useState('');
+  const [password, setPassword] = useState('password'); // Demo password
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     setEmail(initialEmail);
@@ -30,29 +31,32 @@ export function LoginForm({ initialEmail = '', emailPlaceholder = 'votre@email.c
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setLoading(true);
 
-    // Hardcoded logic for demonstration
-    if (password !== 'password') {
-      setError('Mot de passe incorrect. Le mot de passe est "password".');
-      return;
-    }
+    const result = await signIn('credentials', {
+      redirect: false,
+      email,
+      password,
+    });
 
-    if (email === 'teacher@example.com') {
-      router.push('/teacher');
-    } else if (email.startsWith('student')) {
-       // In a real app, you would properly look up the user.
-       if (email === 'student@example.com' || email.match(/^student\d+@example\.com$/)) {
-            const student = await getStudentByEmail(email);
-            if (student) {
-                 router.push(`/student/${student.id}`);
-            } else {
-                setError('Aucun élève trouvé avec cet email.');
-            }
-       } else {
-           setError('Email non reconnu. Essayez teacher@example.com ou un email étudiant valide.');
-       }
-    } else {
-      setError('Email non reconnu. Essayez teacher@example.com ou un email étudiant valide.');
+    setLoading(false);
+
+    if (result?.error) {
+      setError("Les identifiants sont incorrects. L'email est student@example.com ou teacher@example.com et le mot de passe est 'password'.");
+    } else if (result?.ok) {
+      // Redirect based on role after successful login
+      if (email === 'teacher@example.com') {
+        router.push('/teacher');
+      } else {
+        // This is a simplification. A real app would fetch the user object to get the ID.
+        // For now, we rely on the fact that the login form on the home page provides the correct email.
+        const student = await fetch(`/api/user?email=${email}`).then(res => res.json());
+        if (student) {
+             router.push(`/student/${student.id}`);
+        } else {
+            router.push('/'); // Fallback
+        }
+      }
     }
   };
 
@@ -73,6 +77,7 @@ export function LoginForm({ initialEmail = '', emailPlaceholder = 'votre@email.c
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              disabled={loading}
             />
           </div>
           <div className="space-y-2">
@@ -84,6 +89,7 @@ export function LoginForm({ initialEmail = '', emailPlaceholder = 'votre@email.c
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              disabled={loading}
             />
           </div>
           
@@ -98,7 +104,8 @@ export function LoginForm({ initialEmail = '', emailPlaceholder = 'votre@email.c
           )}
 
           <div className="flex justify-between items-center pt-2">
-            <Button type="submit" className="w-full">
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Se connecter
             </Button>
           </div>

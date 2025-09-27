@@ -1,4 +1,6 @@
 // src/components/UserNav.tsx
+"use client";
+
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -10,16 +12,18 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import type { User } from "@prisma/client"
 import Link from "next/link"
-import { LogIn } from "lucide-react"
+import { LogIn, LogOut } from "lucide-react"
+import { useSession, signOut } from "next-auth/react";
 
-interface UserNavProps {
-    user?: User | null
-}
+export function UserNav() {
+    const { data: session, status } = useSession();
 
-export function UserNav({ user }: UserNavProps) {
-    if (!user) {
+    if (status === "loading") {
+        return <div className="h-8 w-8 rounded-full bg-muted animate-pulse" />
+    }
+
+    if (!session) {
         return (
             <Button asChild>
                 <Link href="/login">
@@ -29,13 +33,15 @@ export function UserNav({ user }: UserNavProps) {
             </Button>
         )
     }
+    
+    const { user } = session;
 
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                     <Avatar className="h-8 w-8">
-                        <AvatarFallback>{user.name?.charAt(0)}</AvatarFallback>
+                        <AvatarFallback>{user?.name?.charAt(0)}</AvatarFallback>
                     </Avatar>
                 </Button>
             </DropdownMenuTrigger>
@@ -58,7 +64,8 @@ export function UserNav({ user }: UserNavProps) {
                     </DropdownMenuItem>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={() => signOut({ callbackUrl: '/' })}>
+                    <LogOut className="mr-2" />
                     Se déconnecter
                 </DropdownMenuItem>
             </DropdownMenuContent>

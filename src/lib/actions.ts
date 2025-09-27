@@ -2,8 +2,19 @@
 
 import prisma from './prisma';
 import { revalidatePath } from 'next/cache';
+import { authOptions } from './auth';
+import { getServerSession } from 'next-auth';
+
+async function getCurrentUser() {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+        throw new Error("Utilisateur non authentifié");
+    }
+    return session.user;
+}
 
 export async function setStudentCareer(studentId: string, careerId: string | null) {
+  // TODO: Check if user is a teacher
   await prisma.etatEleve.update({
     where: {
       eleveId: studentId,
@@ -12,12 +23,12 @@ export async function setStudentCareer(studentId: string, careerId: string | nul
       metierId: careerId,
     },
   });
-  // This invalidates the cache for the specific student page and the class page
   revalidatePath(`/student/${studentId}`);
   revalidatePath('/teacher/class/[id]', 'page');
 }
 
 export async function togglePunishment(studentId: string, classeId: string) {
+    // TODO: Check if user is a teacher
     const studentState = await prisma.etatEleve.findUnique({
         where: {
             eleveId: studentId,
@@ -37,35 +48,35 @@ export async function togglePunishment(studentId: string, classeId: string) {
 }
 
 export async function sendMessage(formData: FormData) {
-    const senderId = formData.get('senderId') as string;
+    const user = await getCurrentUser();
     const message = formData.get('message') as string;
     const chatroomId = formData.get('chatroomId') as string;
 
-    const user = await prisma.user.findUnique({ where: { id: senderId }});
-    if (!user) return;
+    const dbUser = await prisma.user.findUnique({ where: { id: user.id }});
+    if (!dbUser) return;
 
     await prisma.message.create({
         data: {
             message,
-            senderId,
-            senderName: user.name ?? 'Utilisateur inconnu',
+            senderId: user.id,
+            senderName: dbUser.name ?? 'Utilisateur inconnu',
             chatroomId,
         }
     });
-    revalidatePath(`/teacher/class/${user.classeId}`);
+    revalidatePath(`/teacher/class/${dbUser.classeId}`);
 }
 
 export async function toggleReaction(messageId: string, emoji: string, userId: string) {
+    const user = await getCurrentUser();
     const existingReaction = await prisma.reaction.findFirst({
         where: {
             messageId,
             emoji,
-            userId,
+            userId: user.id,
         },
     });
-     const user = await prisma.user.findUnique({ where: { id: userId }});
-     if (!user) return;
-
+     const dbUser = await prisma.user.findUnique({ where: { id: user.id }});
+     if (!dbUser) return;
 
     if (existingReaction) {
         await prisma.reaction.delete({
@@ -78,11 +89,11 @@ export async function toggleReaction(messageId: string, emoji: string, userId: s
             data: {
                 messageId,
                 emoji,
-                userId,
+                userId: user.id,
             },
         });
     }
-    revalidatePath(`/teacher/class/${user.classeId}`);
+    revalidatePath(`/teacher/class/${dbUser.classeId}`);
 }
 
 export async function getMessages(chatroomId: string) {
@@ -94,23 +105,24 @@ export async function getMessages(chatroomId: string) {
 }
 
 export async function createClass(formData: FormData) {
+  const user = await getCurrentUser();
+  if (user.role !== 'PROFESSEUR') {
+      throw new Error("Seul un professeur peut créer une classe.");
+  }
   const nom = formData.get('nom') as string;
-  const professeurId = formData.get('professeurId') as string;
   
-  if (!nom || !professeurId) {
-      throw new Error('Le nom de la classe et l\'ID du professeur sont requis.');
+  if (!nom) {
+      throw new Error('Le nom de la classe est requis.');
   }
 
-  // 1. Create a new chatroom for the class
   const chatroom = await prisma.chatroom.create({
       data: {}
   });
 
-  // 2. Create the class
   await prisma.classe.create({
     data: {
       nom,
-      professeurId,
+      professeurId: user.id,
       chatroomId: chatroom.id,
     },
   });
@@ -119,6 +131,10 @@ export async function createClass(formData: FormData) {
 }
 
 export async function addStudentToClass(formData: FormData) {
+    const user = await getCurrentUser();
+    if (user.role !== 'PROFESSEUR') {
+      throw new Error("Seul un professeur peut ajouter un élève.");
+    }
     const name = formData.get('name') as string;
     const email = formData.get('email') as string;
     const ambition = formData.get('ambition') as string;
@@ -158,6 +174,11 @@ export async function getStudentByEmail(email: string) {
 }
 
 export async function createSession(professeurId: string, studentIds: string[]) {
+    const user = await getCurrentUser();
+    if (user.role !== 'PROFESSEUR' || user.id !== professeurId) {
+      throw new Error("Action non autorisée.");
+    }
+
     const session = await prisma.session.create({
         data: {
             professeurId,
