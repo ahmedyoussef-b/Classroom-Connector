@@ -26,7 +26,7 @@ async function getStudentData(id: string): Promise<StudentWithStateAndCareer | n
           }
         },
         classe: true,
-        participations: {
+        sessionsParticipees: {
           where: {
             endedAt: null
           },
@@ -43,14 +43,14 @@ async function getStudentData(id: string): Promise<StudentWithStateAndCareer | n
     // If student is punished, don't return the career theme
     if (student.etat?.isPunished && student.etat.metier) {
         // Create a new object to avoid modifying the cached one
-        const studentWithoutTheme: StudentWithStateAndCareer = {
+        const studentWithoutTheme: any = { // Use any to allow modification
             ...student,
             etat: {
                 ...student.etat,
                 metier: null
             }
         };
-        return studentWithoutTheme;
+        return studentWithoutTheme as StudentWithStateAndCareer;
     }
 
     return student;
@@ -93,7 +93,7 @@ export default async function StudentPage({
 
   const ambitionIcon = career ? <GraduationCap className="h-5 w-5 text-primary" /> : <Lightbulb className="h-5 w-5 text-accent" />;
   
-  const activeSession = student.participations?.[0];
+  const activeSession = student.sessionsParticipees?.[0];
 
   return (
     <CareerThemeWrapper career={career ?? undefined}>
