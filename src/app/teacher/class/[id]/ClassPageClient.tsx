@@ -53,9 +53,18 @@ export default function ClassPageClient({ classe, teacher }: ClassPageClientProp
   const selectedCount = selectedStudents.size;
 
   const handleStartSession = () => {
-    if (selectedCount === 0) return;
-
+    if (selectedCount === 0 || !teacher.id) return;
+    
     startSessionTransition(async () => {
+        if (!teacher.id) {
+             toast({
+              variant: 'destructive',
+              title: 'Erreur',
+              description: 'Impossible de récupérer l\'identifiant du professeur.',
+            });
+            return;
+        }
+
       try {
         const studentIds = Array.from(selectedStudents);
         const session = await createSession(teacher.id, studentIds);
