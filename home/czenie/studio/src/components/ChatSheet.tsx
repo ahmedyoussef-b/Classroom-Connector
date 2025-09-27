@@ -16,7 +16,7 @@ import { Input } from './ui/input';
 import { Avatar, AvatarFallback } from './ui/avatar';
 import { ScrollArea } from './ui/scroll-area';
 import { cn } from '@/lib/utils';
-import { format }s from 'date-fns';
+import { format } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { EmojiPicker } from './EmojiPicker';
 import { getMessages, sendMessage, toggleReaction } from '@/lib/actions';
