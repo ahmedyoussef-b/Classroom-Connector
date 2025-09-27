@@ -24,23 +24,10 @@ export async function POST(req: NextRequest) {
       return new NextResponse('Bad Request', { status: 400 });
     }
 
-    // Envisagez d'ajouter ici une logique de vérification pour s'assurer
-    // que l'utilisateur est autorisé à rejoindre ce canal spécifique.
-    // Par exemple, vérifier s'il fait partie de la classe associée à ce chat.
-
-    const presenceData = {
-      user_id: session.user.id,
-      user_info: {
-        name: session.user.name,
-        email: session.user.email,
-      },
-    };
-
-    const authResponse = pusherServer.authorizeChannel(
-      socketId,
-      channel,
-      presenceData
-    );
+    // For private channels, authentication is sufficient.
+    // For presence channels, you would include user_info.
+    // Since we are now using private channels, we don't need to pass user_info.
+    const authResponse = pusherServer.authorizeChannel(socketId, channel);
     
     console.log(`✅ Pusher auth successful for user ${session.user.id} on channel ${channel}`);
     return new NextResponse(JSON.stringify(authResponse));
