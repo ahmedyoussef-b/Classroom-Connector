@@ -253,8 +253,9 @@ export function ChatSheet({ chatroomId, userId }: { chatroomId: string, userId: 
   
   const handleSendMessage = async (formData: FormData, tempId: string) => {
     try {
-        const confirmedMessage = await sendMessage(formData);
-        setMessages(prev => prev.map(msg => msg.id === tempId ? confirmedMessage : msg));
+        // We don't need to do anything with the returned message here
+        // because the pusher event will update the state
+        await sendMessage(formData);
     } catch (error) {
         console.error("Failed to send message", error);
         setMessages(prev => prev.map(msg => msg.id === tempId ? { ...msg, status: 'failed' } : msg));
