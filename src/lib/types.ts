@@ -1,4 +1,4 @@
-import type { Prisma } from '@prisma/client';
+import type { Prisma, Reaction as PrismaReaction } from '@prisma/client';
 
 export type UserWithClasse = Prisma.UserGetPayload<{
     include: { classe: true }
@@ -19,6 +19,8 @@ export type StudentWithStateAndCareer = Prisma.UserGetPayload<{
         classe: true
     }
 }>
+
+export type Reaction = PrismaReaction;
 
 export type MessageWithReactions = Prisma.MessageGetPayload<{
     include: { reactions: true }

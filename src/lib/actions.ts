@@ -3,6 +3,7 @@
 import prisma from './prisma';
 import { revalidatePath } from 'next/cache';
 import { auth } from './auth';
+import { pusherServer } from './pusher/server';
 
 
 async function getCurrentUser() {
@@ -49,25 +50,42 @@ export async function togglePunishment(studentId: string, classeId: string) {
 
 export async function sendMessage(formData: FormData) {
     const user = await getCurrentUser();
-    const message = formData.get('message') as string;
+    const messageContent = formData.get('message') as string;
     const chatroomId = formData.get('chatroomId') as string;
 
-    const dbUser = await prisma.user.findUnique({ where: { id: user.id }});
-    if (!dbUser) return;
+    if (!messageContent || !chatroomId) {
+        throw new Error("Contenu du message ou ID du salon de discussion manquant.");
+    }
 
-    await prisma.message.create({
+    const dbUser = await prisma.user.findUnique({ where: { id: user.id }});
+    if (!dbUser) throw new Error("Utilisateur non trouvé.");
+
+    const newMessage = await prisma.message.create({
         data: {
-            message,
+            message: messageContent,
             senderId: user.id,
             senderName: dbUser.name ?? 'Utilisateur inconnu',
             chatroomId,
+        },
+        include: {
+            reactions: true
         }
     });
+
+    await pusherServer.trigger(
+        `presence-chatroom-${chatroomId}`,
+        'new-message',
+        newMessage
+    );
+
     revalidatePath(`/teacher/class/${dbUser.classeId}`);
 }
 
-export async function toggleReaction(messageId: string, emoji: string, userId: string) {
+export async function toggleReaction(messageId: string, emoji: string) {
     const user = await getCurrentUser();
+    const dbUser = await prisma.user.findUnique({ where: { id: user.id } });
+    if (!dbUser) throw new Error("Utilisateur non trouvé.");
+
     const existingReaction = await prisma.reaction.findFirst({
         where: {
             messageId,
@@ -75,8 +93,6 @@ export async function toggleReaction(messageId: string, emoji: string, userId: s
             userId: user.id,
         },
     });
-     const dbUser = await prisma.user.findUnique({ where: { id: user.id }});
-     if (!dbUser) return;
 
     if (existingReaction) {
         await prisma.reaction.delete({
@@ -93,6 +109,23 @@ export async function toggleReaction(messageId: string, emoji: string, userId: s
             },
         });
     }
+    
+    const updatedMessage = await prisma.message.findUnique({
+        where: { id: messageId },
+        include: { reactions: true }
+    });
+
+    if (updatedMessage) {
+         await pusherServer.trigger(
+            `presence-chatroom-${updatedMessage.chatroomId}`,
+            'reaction-update',
+            { 
+                messageId,
+                reactions: updatedMessage.reactions
+            }
+        );
+    }
+    
     revalidatePath(`/teacher/class/${dbUser.classeId}`);
 }
 

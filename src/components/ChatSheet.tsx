@@ -1,7 +1,7 @@
 //src/components/chatSheet.tsx
 "use client";
 
-import { useState, useTransition, useRef, useEffect } from 'react';
+import { useState, useTransition, useRef, useEffect, useCallback } from 'react';
 import {
   Sheet,
   SheetContent,
@@ -20,8 +20,10 @@ import { format } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { EmojiPicker } from './EmojiPicker';
 import { getMessages, sendMessage, toggleReaction } from '@/lib/actions';
-import { MessageWithReactions } from '@/lib/types';
+import { MessageWithReactions, Reaction } from '@/lib/types';
 import { useFormStatus } from 'react-dom';
+import { pusherClient } from '@/lib/pusher/client';
+import { useToast } from '@/hooks/use-toast';
 
 function ReactionBubble({ emoji, count, hasReacted }: { emoji: string, count: number, hasReacted: boolean }) {
     return (
@@ -111,74 +113,93 @@ export function ChatSheet({ chatroomId, userId }: { chatroomId: string, userId: 
   const [messages, setMessages] = useState<MessageWithReactions[]>([]);
   const [isPending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
-  const currentUserId = userId; 
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const currentUserId = userId;
+  const { toast } = useToast();
+
+  const scrollToBottom = () => {
+    setTimeout(() => {
+        if(scrollAreaRef.current) {
+            scrollAreaRef.current.scrollTo({ top: scrollAreaRef.current.scrollHeight, behavior: 'smooth' });
+        }
+    }, 100);
+  };
 
   useEffect(() => {
     const fetchMessages = () => {
       startTransition(async () => {
-        const res = await getMessages(chatroomId);
-        setMessages(res);
+        try {
+          const res = await getMessages(chatroomId);
+          setMessages(res);
+          scrollToBottom();
+        } catch (error) {
+            toast({
+                variant: 'destructive',
+                title: 'Erreur',
+                description: 'Impossible de charger les messages.'
+            })
+        }
       });
     };
     fetchMessages();
-  }, [chatroomId]);
+  }, [chatroomId, toast]);
 
+  const handleNewMessage = useCallback((newMessage: MessageWithReactions) => {
+    setMessages(prev => {
+        const messageExists = prev.some(msg => msg.id === newMessage.id);
+        if (!messageExists) {
+            return [...prev, newMessage];
+        }
+        return prev;
+    });
+    scrollToBottom();
+  }, []);
+
+  const handleReactionUpdate = useCallback(({ messageId, reactions }: { messageId: string, reactions: Reaction[] }) => {
+    setMessages(prev => 
+        prev.map(msg => 
+            msg.id === messageId ? { ...msg, reactions } : msg
+        )
+    );
+  }, []);
+
+  useEffect(() => {
+    if (!chatroomId) return;
+
+    const channelName = `presence-chatroom-${chatroomId}`;
+    try {
+        const channel = pusherClient.subscribe(channelName);
+
+        channel.bind('new-message', handleNewMessage);
+        channel.bind('reaction-update', handleReactionUpdate);
+        
+        return () => {
+            channel.unbind('new-message', handleNewMessage);
+            channel.unbind('reaction-update', handleReactionUpdate);
+            pusherClient.unsubscribe(channelName);
+        };
+    } catch (error) {
+        console.error("Pusher subscription error:", error);
+        toast({
+            variant: "destructive",
+            title: "Erreur de connexion",
+            description: "Impossible de se connecter au chat en temps réel."
+        });
+    }
+
+  }, [chatroomId, handleNewMessage, handleReactionUpdate, toast]);
 
   const handleReaction = (messageId: string, emoji: string) => {
     startTransition(async () => {
-        // Optimistic UI update
-        const newMessages = messages.map(msg => {
-            if (msg.id === messageId) {
-                const newReactions = [...msg.reactions];
-                const existingIndex = newReactions.findIndex(r => r.emoji === emoji && r.userId === currentUserId);
-                if (existingIndex > -1) {
-                    newReactions.splice(existingIndex, 1);
-                } else {
-                    newReactions.push({
-                      id: 'temp', emoji, userId: currentUserId, messageId,
-                      createdAt: new Date()
-                    });
-                }
-                return { ...msg, reactions: newReactions };
-            }
-            return msg;
-        });
-        setMessages(newMessages);
-        
-        // Call server action
-        await toggleReaction(messageId, emoji, currentUserId);
-        
-        // Re-fetch to confirm
-        const updatedMessages = await getMessages(chatroomId);
-        setMessages(updatedMessages);
+        await toggleReaction(messageId, emoji);
     });
   };
   
     const handleSendMessage = async (formData: FormData) => {
         const message = formData.get('message') as string;
         if (!message.trim()) return;
-
-        startTransition(async () => {
-             // Optimistic UI update
-            const tempId = `temp-${Date.now()}`;
-            const newMessage: MessageWithReactions = {
-                id: tempId,
-                message: message,
-                senderId: currentUserId,
-                senderName: 'Moi',
-                chatroomId,
-                createdAt: new Date(),
-                reactions: [],
-            };
-            setMessages(prev => [...prev, newMessage]);
-            formRef.current?.reset();
-
-            await sendMessage(formData);
-
-            // Re-fetch to confirm and get real ID
-            const updatedMessages = await getMessages(chatroomId);
-            setMessages(updatedMessages);
-        });
+        formRef.current?.reset();
+        await sendMessage(formData);
   };
 
   return (
@@ -196,7 +217,7 @@ export function ChatSheet({ chatroomId, userId }: { chatroomId: string, userId: 
           </SheetDescription>
         </SheetHeader>
         <div className="flex-1 flex flex-col overflow-hidden">
-          <ScrollArea className="flex-1 pr-4 -mr-4">
+          <ScrollArea className="flex-1 pr-4 -mr-4" ref={scrollAreaRef}>
             <div className="space-y-6 py-4">
               {messages.map((msg) => (
                 <Message key={msg.id} msg={msg} currentUserId={currentUserId} onReaction={(emoji) => handleReaction(msg.id, emoji)} />
@@ -213,7 +234,6 @@ export function ChatSheet({ chatroomId, userId }: { chatroomId: string, userId: 
               name="message"
               placeholder="Écrivez un message..."
               autoComplete="off"
-              disabled={isPending}
             />
             <SubmitButton />
           </form>
