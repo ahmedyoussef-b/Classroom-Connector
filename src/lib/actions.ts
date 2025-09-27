@@ -49,7 +49,7 @@ export async function togglePunishment(studentId: string, classeId: string) {
   revalidatePath(`/student/${studentId}`);
 }
 
-export async function sendMessage(formData: FormData): Promise<MessageWithReactions> {
+export async function sendMessage(formData: FormData) {
     const user = await getCurrentUser();
     const messageContent = formData.get('message') as string;
     const chatroomId = formData.get('chatroomId') as string;
@@ -69,28 +69,32 @@ export async function sendMessage(formData: FormData): Promise<MessageWithReacti
             chatroomId,
         },
         include: {
-            reactions: true
+            reactions: {
+                include: {
+                    user: {
+                        select: { name: true }
+                    }
+                }
+            }
         }
     });
     
     const channelName = `presence-chatroom-${chatroomId}`;
     console.log(`📡 [SERVER] Triggering 'new-message' on channel ${channelName}`);
-    // We don't await this, let it run in the background
-    pusherServer.trigger(
+    await pusherServer.trigger(
         channelName,
         'new-message',
         newMessage
     );
-    
-    // No need to revalidate path as the client will be updated via Pusher
-    
-    return newMessage;
 }
 
 export async function toggleReaction(messageId: string, emoji: string) {
     const user = await getCurrentUser();
-    const dbUser = await prisma.user.findUnique({ where: { id: user.id } });
-    if (!dbUser) throw new Error("Utilisateur non trouvé.");
+    
+    const message = await prisma.message.findUnique({
+        where: { id: messageId },
+    });
+    if (!message) throw new Error("Message non trouvé");
 
     const existingReaction = await prisma.reaction.findFirst({
         where: {
@@ -100,48 +104,54 @@ export async function toggleReaction(messageId: string, emoji: string) {
         },
     });
 
+    let action: 'added' | 'removed';
+    let reaction;
+
     if (existingReaction) {
         await prisma.reaction.delete({
-            where: {
-                id: existingReaction.id,
-            },
+            where: { id: existingReaction.id },
         });
+        action = 'removed';
+        reaction = existingReaction; // We need the ID for the client to filter
     } else {
-        await prisma.reaction.create({
+        reaction = await prisma.reaction.create({
             data: {
                 messageId,
                 emoji,
                 userId: user.id,
             },
-        });
-    }
-    
-    const updatedMessage = await prisma.message.findUnique({
-        where: { id: messageId },
-        include: { reactions: true }
-    });
-
-    if (updatedMessage) {
-         const channelName = `presence-chatroom-${updatedMessage.chatroomId}`;
-         console.log(`📡 [SERVER] Triggering 'reaction-update' on channel ${channelName}`);
-         // We don't await this, let it run in the background
-         pusherServer.trigger(
-            channelName,
-            'reaction-update',
-            { 
-                messageId,
-                reactions: updatedMessage.reactions
+            include: {
+                user: { select: { name: true } }
             }
-        );
+        });
+        action = 'added';
     }
     
-    // No need to revalidate path as the client will be updated via Pusher
+    const channelName = `presence-chatroom-${message.chatroomId}`;
+    console.log(`📡 [SERVER] Triggering 'reaction-update' on channel ${channelName}`);
+    await pusherServer.trigger(
+        channelName,
+        'reaction-update',
+        { 
+            messageId,
+            reaction,
+            action
+        }
+    );
 }
 
-export async function getMessages(chatroomId: string) {
+export async function getMessages(chatroomId: string): Promise<MessageWithReactions[]> {
     return prisma.message.findMany({
         where: { chatroomId },
-        include: { reactions: true },
+        include: { 
+            reactions: {
+                include: {
+                    user: {
+                        select: { name: true }
+                    }
+                }
+            } 
+        },
         orderBy: { createdAt: 'asc' }
     });
 }

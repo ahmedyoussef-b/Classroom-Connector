@@ -22,9 +22,25 @@ export type StudentWithStateAndCareer = Prisma.UserGetPayload<{
 
 export type Reaction = PrismaReaction;
 
+export type ReactionWithUser = Prisma.ReactionGetPayload<{
+    include: {
+        user: {
+            select: { name: true }
+        }
+    }
+}>;
+
 // Base message type from Prisma
 type BaseMessage = Prisma.MessageGetPayload<{
-    include: { reactions: true }
+    include: { 
+        reactions: {
+            include: {
+                user: {
+                    select: { name: true }
+                }
+            }
+        } 
+    }
 }>;
 
 // Add a status for optimistic UI
