@@ -149,6 +149,17 @@ export function ChatSheet({ chatroomId, userId }: { chatroomId: string, userId: 
   }, []);
 
   useEffect(() => {
+    // Test de connexion Pusher
+    pusherClient.connection.bind('connected', () => {
+        console.log('✅ [PUSHER] Connected to Pusher');
+    });
+
+    pusherClient.connection.bind('error', (error: any) => {
+        console.error('❌ [PUSHER] Connection error:', error);
+    });
+  }, []);
+
+  useEffect(() => {
     const fetchMessages = () => {
       startTransition(async () => {
         try {

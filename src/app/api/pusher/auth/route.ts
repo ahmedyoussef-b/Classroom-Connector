@@ -4,12 +4,13 @@ import { getAuthSession } from '@/lib/auth';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
-  console.log('🔒 Pusher auth request received');
+  console.log('🔐 [PUSHER-AUTH] === DEBUT AUTHENTIFICATION ===');
   try {
     const session = await getAuthSession();
+    console.log('🔐 [PUSHER-AUTH] Session:', session ? '✅ Trouvée' : '❌ Non trouvée');
     
     if (!session?.user?.id) {
-      console.error('🚫 Pusher auth failed: Unauthorized (no session)');
+      console.error('❌ [PUSHER-AUTH] Authentification échouée: Non autorisé (pas de session)');
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
@@ -19,20 +20,24 @@ export async function POST(req: NextRequest) {
     const socketId = params.get('socket_id');
     const channel = params.get('channel_name');
 
+    console.log('🔐 [PUSHER-AUTH] Données reçues:', { 
+      socketId,
+      channel,
+      userId: session.user.id 
+    });
+
     if (!socketId || !channel) {
-       console.error('🚫 Pusher auth failed: Bad Request (missing socketId or channel)');
+       console.error('❌ [PUSHER-AUTH] Authentification échouée: Mauvaise requête (socketId ou channel manquant)');
       return new NextResponse('Bad Request', { status: 400 });
     }
 
-    // For private channels, authentication is sufficient.
-    // For presence channels, you would include user_info.
-    // Since we are now using private channels, we don't need to pass user_info.
+    // Pour les canaux privés, l'authentification est suffisante.
     const authResponse = pusherServer.authorizeChannel(socketId, channel);
     
-    console.log(`✅ Pusher auth successful for user ${session.user.id} on channel ${channel}`);
+    console.log(`✅ [PUSHER-AUTH] Autorisation réussie pour l'utilisateur ${session.user.id} sur le canal ${channel}`);
     return new NextResponse(JSON.stringify(authResponse));
   } catch (error) {
-    console.error('💥 Pusher auth error:', error);
+    console.error('💥 [PUSHER-AUTH] Erreur critique durant l\'authentification:', error);
     return new NextResponse('Internal Server Error', { status: 500 });
   }
 }
