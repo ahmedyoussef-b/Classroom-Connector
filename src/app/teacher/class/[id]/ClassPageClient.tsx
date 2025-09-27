@@ -12,6 +12,7 @@ import { AddStudentForm } from '@/components/AddStudentForm';
 import { createSession } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import type { User } from 'next-auth';
+import { ChatSheet } from '@/components/ChatSheet';
 
 // Définir un type simple et sérialisable pour les élèves
 type SimpleStudent = {
@@ -27,6 +28,7 @@ interface ClassPageClientProps {
     classe: {
         id: string;
         nom: string;
+        chatroomId: string | null;
         eleves: SimpleStudent[];
     };
     teacher: User;
@@ -102,6 +104,7 @@ export default function ClassPageClient({ classe, teacher }: ClassPageClientProp
             </div>
             <div className="flex items-center gap-2">
                 <AddStudentForm classeId={classe.id} />
+                 {classe.chatroomId && <ChatSheet chatroomId={classe.chatroomId} userId={teacher.id} />}
                 {selectedCount > 0 && (
                     <Button 
                       onClick={handleStartSession} 
