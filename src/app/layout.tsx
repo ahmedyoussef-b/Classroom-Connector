@@ -5,6 +5,7 @@ import { Toaster } from '@/components/ui/toaster';
 import AuthProvider from './AuthProvider';
 import { Inter } from 'next/font/google';
 import { cn } from '@/lib/utils';
+import { DebugPusher } from '@/components/DebugPusher';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -30,6 +31,7 @@ export default function RootLayout({
         )}
       >
         <AuthProvider>
+          <DebugPusher />
           {children}
           <Toaster />
         </AuthProvider>
