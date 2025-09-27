@@ -37,30 +37,17 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Autoriser les canaux publics ET privés pour le test
-    const isPublicChannel = channelName.startsWith('public-');
-    const isPrivateChannel = channelName.startsWith('private-');
-    
-    if (!isPublicChannel && !isPrivateChannel) {
-      console.log('❌ [PUSHER-AUTH] Type de canal non autorisé');
+    // Autoriser les canaux privés uniquement
+    if (!channelName.startsWith('private-chatroom-')) {
+      console.log('❌ [PUSHER-AUTH] Type de canal non autorisé:', channelName);
       return new Response(JSON.stringify({ error: 'Invalid channel type' }), {
-        status: 400,
+        status: 403,
         headers: { 'Content-Type': 'application/json' }
       });
     }
 
-    console.log('🔐 [PUSHER-AUTH] Tentative d\'autorisation...');
+    console.log('🔐 [PUSHER-AUTH] Tentative d\'autorisation pour canal privé...');
     
-    // Pour les canaux publics, auth simple
-    if (isPublicChannel) {
-      const authResponse = pusherServer.authorizeChannel(socketId, channelName);
-      console.log('✅ [PUSHER-AUTH] Canal public autorisé');
-      return new Response(JSON.stringify(authResponse), {
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }
-
-    // Pour les canaux privés, auth avec user data
     const authResponse = pusherServer.authorizeChannel(socketId, channelName, {
       user_id: session.user.id,
       user_info: {

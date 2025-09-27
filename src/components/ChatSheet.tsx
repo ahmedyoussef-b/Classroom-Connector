@@ -212,7 +212,7 @@ export function ChatSheet({ chatroomId, userId }: { chatroomId: string, userId: 
   useEffect(() => {
     if (!chatroomId) return;
 
-    const channelName = `public-chatroom-${chatroomId}`;
+    const channelName = `private-chatroom-${chatroomId}`;
     try {
         console.log(`🔌 [CLIENT] Subscribing to channel: ${channelName}`);
         const channel = pusherClient.subscribe(channelName);
