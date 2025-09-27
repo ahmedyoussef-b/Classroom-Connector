@@ -26,7 +26,7 @@ async function getStudentData(id: string): Promise<StudentWithStateAndCareer | n
           }
         },
         classe: true,
-        sessionsParticipees: {
+        participations: {
           where: {
             endedAt: null
           },
@@ -82,14 +82,14 @@ export default async function StudentPage({
 
   const ambitionIcon = career ? <GraduationCap className="h-5 w-5 text-primary" /> : <Lightbulb className="h-5 w-5 text-accent" />;
   
-  const activeSession = student.sessionsParticipees?.[0];
+  const activeSession = student.participations?.[0];
   const teacher = isTeacherView ? await prisma.user.findUnique({ where: {id: 'teacher-id'}}) : null;
 
 
   return (
     <CareerThemeWrapper career={career ?? undefined}>
       <div className="flex flex-col min-h-screen">
-        <Header user={isTeacherView ? teacher : student} />
+        <Header />
         <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow">
           <div className="flex items-center gap-4 mb-8">
             <BackButton />
