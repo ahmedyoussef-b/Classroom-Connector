@@ -11,7 +11,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Button } from './ui/button';
-import { MessageCircle, Send, SmilePlus, Clock, AlertCircle } from 'lucide-react';
+import { MessageCircle, Send, SmilePlus, Clock, AlertCircle, Users } from 'lucide-react';
 import { Input } from './ui/input';
 import { Avatar, AvatarFallback } from './ui/avatar';
 import { ScrollArea } from './ui/scroll-area';
@@ -20,7 +20,7 @@ import { format } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { EmojiPicker } from './EmojiPicker';
 import { getMessages, sendMessage, toggleReaction } from '@/lib/actions';
-import { MessageWithReactions, Reaction } from '@/lib/types';
+import { MessageWithReactions, ReactionWithUser } from '@/lib/types';
 import { useFormStatus } from 'react-dom';
 import { pusherClient } from '@/lib/pusher/client';
 import { useToast } from '@/hooks/use-toast';
@@ -41,13 +41,13 @@ function ReactionBubble({ emoji, count, hasReacted }: { emoji: string, count: nu
 
 function Message({ msg, currentUserId, onReaction, onResend }: { msg: MessageWithReactions, currentUserId: string, onReaction: (emoji: string) => void, onResend: () => void }) {
     const isCurrentUser = msg.senderId === currentUserId;
-    const reactionsByEmoji: { [key: string]: string[] } = {};
+    const reactionsByEmoji: { [key: string]: { users: {id: string, name: string | null}[] } } = {};
     
     msg.reactions.forEach(r => {
         if (!reactionsByEmoji[r.emoji]) {
-            reactionsByEmoji[r.emoji] = [];
+            reactionsByEmoji[r.emoji] = { users: [] };
         }
-        reactionsByEmoji[r.emoji].push(r.userId);
+        reactionsByEmoji[r.emoji].users.push({ id: r.userId, name: r.user.name });
     });
 
     const reactionEntries = Object.entries(reactionsByEmoji);
@@ -61,24 +61,24 @@ function Message({ msg, currentUserId, onReaction, onResend }: { msg: MessageWit
                         <AvatarFallback>{msg.senderName?.charAt(0)}</AvatarFallback>
                     </Avatar>
                 )}
-                <div className="flex flex-col gap-1 items-end max-w-xs">
+                <div className="flex flex-col gap-1 max-w-xs">
                     <div className={cn("rounded-lg p-3 text-sm relative", isCurrentUser ? "bg-primary text-primary-foreground" : "bg-muted")}>
                         {!isCurrentUser && <p className="font-bold">{msg.senderName}</p>}
                         <p className="mt-1 whitespace-pre-wrap">{msg.message}</p>
-                        <p className="mt-2 text-xs opacity-60 text-right">{messageTime}</p>
+                        <p className={cn("mt-2 text-xs opacity-60", isCurrentUser ? 'text-right' : 'text-left')}>{messageTime}</p>
                     </div>
                      {reactionEntries.length > 0 && (
-                        <div className="flex gap-1 flex-wrap justify-end">
-                            {reactionEntries.map(([emoji, users]) => (
+                        <div className={cn("flex gap-1 flex-wrap", isCurrentUser ? 'justify-end' : 'justify-start')}>
+                            {reactionEntries.map(([emoji, { users }]) => (
                                <TooltipProvider key={emoji} delayDuration={100}>
                                 <Tooltip>
                                     <TooltipTrigger>
                                         <div onClick={() => onReaction(emoji)}>
-                                             <ReactionBubble emoji={emoji} count={users.length} hasReacted={users.includes(currentUserId)} />
+                                             <ReactionBubble emoji={emoji} count={users.length} hasReacted={users.some(u => u.id === currentUserId)} />
                                         </div>
                                     </TooltipTrigger>
                                     <TooltipContent>
-                                        <p>{users.join(', ')}</p>
+                                        <p>{users.map(u => u.name).join(', ')}</p>
                                     </TooltipContent>
                                 </Tooltip>
                                </TooltipProvider>
@@ -93,9 +93,9 @@ function Message({ msg, currentUserId, onReaction, onResend }: { msg: MessageWit
                 )}
             </div>
             {msg.status === 'failed' && (
-                 <div className={cn("absolute top-0 flex items-center gap-2", isCurrentUser ? "left-0 -translate-x-full" : "right-0 translate-x-full")}>
+                 <div className={cn("absolute top-0 flex items-center gap-2", isCurrentUser ? "left-0 -translate-x-full pr-2" : "right-0 translate-x-full pl-2")}>
                      <AlertCircle className="h-4 w-4 text-destructive" />
-                     <Button variant="link" size="sm" className="text-destructive" onClick={onResend}>
+                     <Button variant="link" size="sm" className="text-destructive p-0" onClick={onResend}>
                          Renvoyer
                      </Button>
                  </div>
@@ -107,7 +107,7 @@ function Message({ msg, currentUserId, onReaction, onResend }: { msg: MessageWit
                         size="icon"
                         className={cn(
                             "absolute top-0 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity",
-                            isCurrentUser ? "left-0 -translate-x-full" : "right-0 translate-x-full"
+                             isCurrentUser ? "left-0 -translate-x-1/2" : "right-0 translate-x-1/2"
                         )}
                     >
                         <SmilePlus className="h-4 w-4" />
@@ -133,6 +133,7 @@ function SubmitButton() {
 
 export function ChatSheet({ chatroomId, userId }: { chatroomId: string, userId: string }) {
   const [messages, setMessages] = useState<MessageWithReactions[]>([]);
+  const [onlineUsers, setOnlineUsers] = useState<any[]>([]);
   const [isPending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -149,17 +150,23 @@ export function ChatSheet({ chatroomId, userId }: { chatroomId: string, userId: 
   }, []);
 
   useEffect(() => {
-    // Test de connexion Pusher
     pusherClient.connection.bind('connected', () => {
         console.log('✅ [PUSHER] Connected to Pusher');
     });
-
     pusherClient.connection.bind('error', (error: any) => {
-        console.error('❌ [PUSHER] Connection error:', error);
+        console.error('❌ [PUSHER] Connection error FULL DETAILS:', JSON.stringify(error, null, 2));
+    });
+    pusherClient.connection.bind('disconnected', () => {
+        console.log('🔌 Pusher disconnected - attempting reconnect');
+    });
+    pusherClient.connection.bind('reconnecting', () => {
+        console.log('🔄 Pusher reconnecting...');
     });
   }, []);
 
   useEffect(() => {
+    if (!chatroomId) return;
+    
     const fetchMessages = () => {
       startTransition(async () => {
         try {
@@ -178,46 +185,69 @@ export function ChatSheet({ chatroomId, userId }: { chatroomId: string, userId: 
     fetchMessages();
   }, [chatroomId, toast, scrollToBottom]);
   
-  const handleNewMessage = useCallback((newMessage: MessageWithReactions) => {
+ const handleNewMessage = useCallback((newMessage: MessageWithReactions) => {
     console.log("📨 [CLIENT] Received 'new-message':", newMessage);
     setMessages(prev => {
-        // If the message is from the current user and it was pending, update it.
-        // Otherwise, add the new message.
         const pendingMessageIndex = prev.findIndex(msg => msg.status === 'pending' && msg.senderId === newMessage.senderId);
+        
         if (pendingMessageIndex !== -1) {
+            // Replace the pending message with the confirmed one from the server
             const newMessages = [...prev];
             newMessages[pendingMessageIndex] = newMessage;
             return newMessages;
-        }
-
-        const messageExists = prev.some(msg => msg.id === newMessage.id);
-        if (!messageExists) {
+        } else if (!prev.some(msg => msg.id === newMessage.id)) {
+            // If it's a new message from someone else (or self, if no pending), add it
             return [...prev, newMessage];
         }
-        return prev;
+        
+        return prev; // If message already exists, do nothing
     });
     scrollToBottom();
-  }, [scrollToBottom]);
+}, [scrollToBottom]);
 
-  const handleReactionUpdate = useCallback(({ messageId, reactions }: { messageId: string, reactions: Reaction[] }) => {
-    console.log(`👍 [CLIENT] Received 'reaction-update' for message ${messageId}:`, reactions);
+
+  const handleReactionUpdate = useCallback((data: { messageId: string, reaction: ReactionWithUser, action: 'added' | 'removed' }) => {
+    console.log(`👍 [CLIENT] Received 'reaction-update' for message ${data.messageId}:`, data);
     setMessages(prev => 
-        prev.map(msg => 
-            msg.id === messageId ? { ...msg, reactions } : msg
-        )
+        prev.map(msg => {
+            if (msg.id === data.messageId) {
+                let newReactions = [...msg.reactions];
+                if (data.action === 'added') {
+                    // Avoid adding duplicates
+                    if (!newReactions.some(r => r.id === data.reaction.id)) {
+                        newReactions.push(data.reaction);
+                    }
+                } else {
+                    newReactions = newReactions.filter(r => r.id !== data.reaction.id);
+                }
+                return { ...msg, reactions: newReactions };
+            }
+            return msg;
+        })
     );
   }, []);
 
   useEffect(() => {
     if (!chatroomId) return;
 
-    const channelName = `private-chatroom-${chatroomId}`;
+    const channelName = `presence-chatroom-${chatroomId}`;
     try {
         console.log(`🔌 [CLIENT] Subscribing to channel: ${channelName}`);
         const channel = pusherClient.subscribe(channelName);
         
-        channel.bind('pusher:subscription_succeeded', () => {
+        channel.bind('pusher:subscription_succeeded', (members: any) => {
             console.log(`✅ [CLIENT] Successfully subscribed to ${channelName}`);
+            setOnlineUsers(Object.values(members.members));
+        });
+
+        channel.bind('pusher:member_added', (member: any) => {
+            console.log('👤 User joined:', member.info);
+            setOnlineUsers(prev => [...prev, member.info]);
+        });
+
+        channel.bind('pusher:member_removed', (member: any) => {
+            console.log('👤 User left:', member.info);
+            setOnlineUsers(prev => prev.filter(u => u.email !== member.info.email));
         });
         
         channel.bind('pusher:subscription_error', (status: any) => {
@@ -229,6 +259,7 @@ export function ChatSheet({ chatroomId, userId }: { chatroomId: string, userId: 
         
         return () => {
             console.log(`🔌 [CLIENT] Unsubscribing from channel: ${channelName}`);
+            setOnlineUsers([]);
             channel.unbind_all();
             pusherClient.unsubscribe(channelName);
         };
@@ -244,28 +275,20 @@ export function ChatSheet({ chatroomId, userId }: { chatroomId: string, userId: 
   }, [chatroomId, handleNewMessage, handleReactionUpdate, toast]);
 
   const handleReaction = (messageId: string, emoji: string) => {
-    // Optimistic update for reactions could be added here, but for now we rely on the server push
     startTransition(async () => {
-        await toggleReaction(messageId, emoji);
+        try {
+           await toggleReaction(messageId, emoji);
+        } catch (error) {
+            toast({
+                variant: 'destructive',
+                title: 'Erreur',
+                description: 'Impossible d\'ajouter la réaction.'
+            })
+        }
     });
   };
   
-  const handleSendMessage = async (formData: FormData, tempId: string) => {
-    try {
-        const confirmedMessage = await sendMessage(formData);
-        setMessages(prev => prev.map(msg => msg.id === tempId ? confirmedMessage : msg));
-    } catch (error) {
-        console.error("Failed to send message", error);
-        setMessages(prev => prev.map(msg => msg.id === tempId ? { ...msg, status: 'failed' } : msg));
-        toast({
-            variant: "destructive",
-            title: "Erreur d'envoi",
-            description: "Votre message n'a pas pu être envoyé."
-        });
-    }
-  };
-
-  const submitMessage = (formData: FormData) => {
+  const sendMessageAction = async (formData: FormData) => {
     const messageContent = formData.get('message') as string;
     if (!messageContent.trim() || !session?.user) return;
     
@@ -283,11 +306,40 @@ export function ChatSheet({ chatroomId, userId }: { chatroomId: string, userId: 
         status: 'pending'
     };
     
-    console.log("⏳ [CLIENT] Optimistically adding message:", optimisticMessage);
     setMessages(prev => [...prev, optimisticMessage]);
     scrollToBottom();
     
-    handleSendMessage(formData, tempId);
+    try {
+        await sendMessage(formData);
+    } catch (error) {
+        console.error("Failed to send message", error);
+        setMessages(prev => prev.map(msg => msg.id === tempId ? { ...msg, status: 'failed' } : msg));
+        toast({
+            variant: "destructive",
+            title: "Erreur d'envoi",
+            description: "Votre message n'a pas pu être envoyé."
+        });
+    }
+  };
+
+  const resendMessageAction = async (msg: MessageWithReactions) => {
+    setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, status: 'pending' } : m));
+    
+    const formData = new FormData();
+    formData.append('message', msg.message);
+    formData.append('chatroomId', msg.chatroomId);
+
+    try {
+        await sendMessage(formData);
+    } catch (error) {
+         console.error("Failed to resend message", error);
+         setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, status: 'failed' } : m));
+         toast({
+            variant: "destructive",
+            title: "Erreur d'envoi",
+            description: "Votre message n'a pas pu être renvoyé."
+        });
+    }
   }
 
   return (
@@ -300,8 +352,8 @@ export function ChatSheet({ chatroomId, userId }: { chatroomId: string, userId: 
       <SheetContent className="flex flex-col w-full sm:max-w-lg">
         <SheetHeader>
           <SheetTitle>Chat de la classe</SheetTitle>
-          <SheetDescription>
-            Discussion en temps réel avec vos élèves.
+          <SheetDescription className="flex items-center gap-2">
+            <Users className="h-4 w-4" /> {onlineUsers.length} personne(s) en ligne.
           </SheetDescription>
         </SheetHeader>
         <div className="flex-1 flex flex-col overflow-hidden">
@@ -313,19 +365,14 @@ export function ChatSheet({ chatroomId, userId }: { chatroomId: string, userId: 
                     msg={msg} 
                     currentUserId={currentUserId} 
                     onReaction={(emoji) => handleReaction(msg.id, emoji)}
-                    onResend={() => {
-                        const formData = new FormData();
-                        formData.append('message', msg.message);
-                        formData.append('chatroomId', msg.chatroomId);
-                        handleSendMessage(formData, msg.id)
-                    }}
+                    onResend={() => resendMessageAction(msg)}
                 />
               ))}
             </div>
           </ScrollArea>
           <form 
             ref={formRef}
-            action={submitMessage} 
+            action={sendMessageAction} 
             className="flex gap-2 border-t pt-4"
           >
             <input type="hidden" name="chatroomId" value={chatroomId} />
