@@ -171,7 +171,7 @@ export function ChatSheet({ chatroomId, userId }: { chatroomId: string, userId: 
       startTransition(async () => {
         try {
           const res = await getMessages(chatroomId);
-          setMessages(res);
+          setMessages(res || []);
           scrollToBottom('auto');
         } catch (error) {
             toast({
@@ -213,7 +213,10 @@ export function ChatSheet({ chatroomId, userId }: { chatroomId: string, userId: 
             if (msg.id === data.messageId) {
                 let newReactions = [...msg.reactions];
                 if (data.action === 'added') {
-                    newReactions.push(data.reaction);
+                    // Avoid adding duplicates
+                    if (!newReactions.some(r => r.id === data.reaction.id)) {
+                        newReactions.push(data.reaction);
+                    }
                 } else {
                     newReactions = newReactions.filter(r => r.id !== data.reaction.id);
                 }
@@ -285,23 +288,7 @@ export function ChatSheet({ chatroomId, userId }: { chatroomId: string, userId: 
     });
   };
   
-  const handleSendMessage = async (formData: FormData, tempId: string) => {
-    try {
-        // The server will broadcast the message back to us.
-        await sendMessage(formData);
-    } catch (error) {
-        console.error("Failed to send message", error);
-        // If it fails, update the status of the optimistic message to 'failed'.
-        setMessages(prev => prev.map(msg => msg.id === tempId ? { ...msg, status: 'failed' } : msg));
-        toast({
-            variant: "destructive",
-            title: "Erreur d'envoi",
-            description: "Votre message n'a pas pu être envoyé."
-        });
-    }
-  };
-
-  const submitMessage = (formData: FormData) => {
+  const sendMessageAction = async (formData: FormData) => {
     const messageContent = formData.get('message') as string;
     if (!messageContent.trim() || !session?.user) return;
     
@@ -319,11 +306,40 @@ export function ChatSheet({ chatroomId, userId }: { chatroomId: string, userId: 
         status: 'pending'
     };
     
-    console.log("⏳ [CLIENT] Optimistically adding message:", optimisticMessage);
     setMessages(prev => [...prev, optimisticMessage]);
     scrollToBottom();
     
-    handleSendMessage(formData, tempId);
+    try {
+        await sendMessage(formData);
+    } catch (error) {
+        console.error("Failed to send message", error);
+        setMessages(prev => prev.map(msg => msg.id === tempId ? { ...msg, status: 'failed' } : msg));
+        toast({
+            variant: "destructive",
+            title: "Erreur d'envoi",
+            description: "Votre message n'a pas pu être envoyé."
+        });
+    }
+  };
+
+  const resendMessageAction = async (msg: MessageWithReactions) => {
+    setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, status: 'pending' } : m));
+    
+    const formData = new FormData();
+    formData.append('message', msg.message);
+    formData.append('chatroomId', msg.chatroomId);
+
+    try {
+        await sendMessage(formData);
+    } catch (error) {
+         console.error("Failed to resend message", error);
+         setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, status: 'failed' } : m));
+         toast({
+            variant: "destructive",
+            title: "Erreur d'envoi",
+            description: "Votre message n'a pas pu être renvoyé."
+        });
+    }
   }
 
   return (
@@ -349,21 +365,14 @@ export function ChatSheet({ chatroomId, userId }: { chatroomId: string, userId: 
                     msg={msg} 
                     currentUserId={currentUserId} 
                     onReaction={(emoji) => handleReaction(msg.id, emoji)}
-                    onResend={() => {
-                        const formData = new FormData();
-                        formData.append('message', msg.message);
-                        formData.append('chatroomId', msg.chatroomId);
-                        // Optimistically set to pending again
-                        setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, status: 'pending' } : m));
-                        handleSendMessage(formData, msg.id)
-                    }}
+                    onResend={() => resendMessageAction(msg)}
                 />
               ))}
             </div>
           </ScrollArea>
           <form 
             ref={formRef}
-            action={submitMessage} 
+            action={sendMessageAction} 
             className="flex gap-2 border-t pt-4"
           >
             <input type="hidden" name="chatroomId" value={chatroomId} />

@@ -61,6 +61,7 @@ export async function sendMessage(formData: FormData) {
     const dbUser = await prisma.user.findUnique({ where: { id: user.id }});
     if (!dbUser) throw new Error("Utilisateur non trouvé.");
 
+    console.log(`💬 [SERVER] Création du message de ${dbUser.name} dans la chatroom ${chatroomId}`);
     const newMessage = await prisma.message.create({
         data: {
             message: messageContent,
@@ -72,7 +73,7 @@ export async function sendMessage(formData: FormData) {
             reactions: {
                 include: {
                     user: {
-                        select: { name: true }
+                        select: { name: true, id: true }
                     }
                 }
             }
@@ -113,6 +114,7 @@ export async function toggleReaction(messageId: string, emoji: string) {
         });
         action = 'removed';
         reaction = existingReaction; // We need the ID for the client to filter
+        console.log(`👍 [SERVER] Réaction supprimée par ${user.name}`);
     } else {
         reaction = await prisma.reaction.create({
             data: {
@@ -121,10 +123,11 @@ export async function toggleReaction(messageId: string, emoji: string) {
                 userId: user.id,
             },
             include: {
-                user: { select: { name: true } }
+                user: { select: { name: true, id: true } }
             }
         });
         action = 'added';
+        console.log(`👍 [SERVER] Réaction ajoutée par ${user.name}`);
     }
     
     const channelName = `presence-chatroom-${message.chatroomId}`;
@@ -141,13 +144,14 @@ export async function toggleReaction(messageId: string, emoji: string) {
 }
 
 export async function getMessages(chatroomId: string): Promise<MessageWithReactions[]> {
+    console.log(`✉️ [SERVER] Récupération des messages pour la chatroom ${chatroomId}`);
     return prisma.message.findMany({
         where: { chatroomId },
         include: { 
             reactions: {
                 include: {
                     user: {
-                        select: { name: true }
+                        select: { name: true, id: true }
                     }
                 }
             } 

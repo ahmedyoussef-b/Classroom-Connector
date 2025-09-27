@@ -20,12 +20,10 @@ export type StudentWithStateAndCareer = Prisma.UserGetPayload<{
     }
 }>
 
-export type Reaction = PrismaReaction;
-
 export type ReactionWithUser = Prisma.ReactionGetPayload<{
     include: {
         user: {
-            select: { name: true }
+            select: { name: true, id: true }
         }
     }
 }>;
@@ -36,7 +34,7 @@ type BaseMessage = Prisma.MessageGetPayload<{
         reactions: {
             include: {
                 user: {
-                    select: { name: true }
+                    select: { name: true, id: true }
                 }
             }
         } 
