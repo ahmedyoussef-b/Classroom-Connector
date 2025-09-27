@@ -8,10 +8,10 @@ import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ArrowLeft, Loader2, Video } from 'lucide-react';
-import type { User } from '@prisma/client';
 import { AddStudentForm } from '@/components/AddStudentForm';
 import { createSession } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
+import type { User } from 'next-auth';
 
 // Définir un type simple et sérialisable pour les élèves
 type SimpleStudent = {
