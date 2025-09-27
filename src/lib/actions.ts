@@ -2,11 +2,11 @@
 
 import prisma from './prisma';
 import { revalidatePath } from 'next/cache';
-import { authOptions } from './auth';
-import { getServerSession } from 'next-auth';
+import { auth } from './auth';
+
 
 async function getCurrentUser() {
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     if (!session?.user?.id) {
         throw new Error("Utilisateur non authentifié");
     }

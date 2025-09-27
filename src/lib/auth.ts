@@ -1,4 +1,5 @@
 // src/lib/auth.ts
+import NextAuth from 'next-auth';
 import { PrismaAdapter } from '@auth/prisma-adapter';
 import type { NextAuthConfig } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
@@ -63,3 +64,5 @@ export const authOptions: NextAuthConfig = {
     signIn: '/login',
   },
 };
+
+export const { handlers, auth, signIn, signOut } = NextAuth(authOptions);
