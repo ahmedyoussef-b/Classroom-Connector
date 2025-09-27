@@ -17,13 +17,13 @@ interface StudentCardProps {
     etat: {
       isPunished: boolean;
     } | null;
-    isConnected?: boolean;
   };
   isSelected: boolean;
   onSelectionChange: (studentId: string, isSelected: boolean) => void;
+  isConnected: boolean;
 }
 
-export function StudentCard({ student, isSelected, onSelectionChange }: StudentCardProps) {
+export function StudentCard({ student, isSelected, onSelectionChange, isConnected }: StudentCardProps) {
   const [isPending] = useTransition();
   
   const state = student.etat;
@@ -33,17 +33,17 @@ export function StudentCard({ student, isSelected, onSelectionChange }: StudentC
       "flex flex-col transition-all duration-300 relative",
       isSelected && "ring-2 ring-primary",
       state?.isPunished && "bg-destructive/10 border-destructive",
-      (isPending || !student.isConnected) && "opacity-50",
-      !student.isConnected && "bg-muted/50"
+      (isPending || !isConnected) && "opacity-50",
+      !isConnected && "bg-muted/50"
     )}>
         <div className="absolute top-3 right-3 flex items-center gap-2">
-             <div className={cn("h-2.5 w-2.5 rounded-full", student.isConnected ? 'bg-green-500' : 'bg-gray-400')} title={student.isConnected ? 'Connecté' : 'Déconnecté'}></div>
+             <div className={cn("h-2.5 w-2.5 rounded-full", isConnected ? 'bg-green-500' : 'bg-gray-400')} title={isConnected ? 'Connecté' : 'Déconnecté'}></div>
              <Checkbox
                 id={`select-${student.id}`}
                 checked={isSelected}
                 onCheckedChange={(checked) => onSelectionChange(student.id, !!checked)}
                 aria-label={`Sélectionner ${student.name}`}
-                disabled={!student.isConnected}
+                disabled={!isConnected}
             />
         </div>
 
@@ -58,7 +58,7 @@ export function StudentCard({ student, isSelected, onSelectionChange }: StudentC
         </div>
       </CardHeader>
       <CardContent className="flex-grow justify-center flex items-center">
-         {!student.isConnected && (
+         {!isConnected && (
              <p className="text-xs text-center text-muted-foreground font-semibold">Cet élève est hors ligne.</p>
         )}
       </CardContent>

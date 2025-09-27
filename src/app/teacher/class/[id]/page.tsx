@@ -24,28 +24,22 @@ export default async function ClassPage({ params }: { params: { id: string } }) 
       },
     });
 
-  if (!classe) {
+  if (!classe || !classe.chatroomId) {
     notFound();
   }
   
-  // This is a simplified simulation of checking connection status
-  const elevesWithConnection = classe.eleves.map((eleve, index) => ({
-    ...eleve,
-    isConnected: index % 2 === 0, 
-  }));
-
   const clientProps = {
     classe: {
       id: classe.id,
       nom: classe.nom,
-      chatroomId: classe.chatroomId, // Pass chatroomId
-      eleves: elevesWithConnection.map(e => ({
+      chatroomId: classe.chatroomId,
+      eleves: classe.eleves.map(e => ({
           id: e.id,
           name: e.name,
+          email: e.email,
           etat: e.etat ? {
               isPunished: e.etat.isPunished
           } : null,
-          isConnected: e.isConnected
       })),
     },
     teacher: session.user,

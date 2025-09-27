@@ -1,7 +1,7 @@
 // src/app/teacher/class/[id]/ClassPageClient.tsx
 "use client";
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { StudentCard } from '@/components/StudentCard';
 import { Header } from '@/components/Header';
@@ -13,22 +13,23 @@ import { createSession } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import type { User } from 'next-auth';
 import { ChatSheet } from '@/components/ChatSheet';
+import { pusherClient } from '@/lib/pusher/client';
 
 // Définir un type simple et sérialisable pour les élèves
 type SimpleStudent = {
   id: string;
   name: string | null;
+  email: string | null;
   etat: {
     isPunished: boolean;
   } | null;
-  isConnected: boolean;
 };
 
 interface ClassPageClientProps {
     classe: {
         id: string;
         nom: string;
-        chatroomId: string | null;
+        chatroomId: string;
         eleves: SimpleStudent[];
     };
     teacher: User;
@@ -37,8 +38,48 @@ interface ClassPageClientProps {
 export default function ClassPageClient({ classe, teacher }: ClassPageClientProps) {
   const [selectedStudents, setSelectedStudents] = useState<Set<string>>(new Set());
   const [isStartingSession, startSessionTransition] = useTransition();
+  const [onlineUserEmails, setOnlineUserEmails] = useState<Set<string>>(new Set());
   const router = useRouter();
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (!classe.chatroomId) return;
+
+    const channelName = `presence-chatroom-${classe.chatroomId}`;
+    
+    try {
+        const channel = pusherClient.subscribe(channelName);
+        
+        channel.bind('pusher:subscription_succeeded', (members: any) => {
+            console.log(`✅ [CLIENT] Successfully subscribed to ${channelName} on Class Page`);
+            const onlineEmails = new Set<string>();
+            members.each((member: any) => onlineEmails.add(member.info.email));
+            setOnlineUserEmails(onlineEmails);
+        });
+
+        channel.bind('pusher:member_added', (member: any) => {
+            console.log('👤 User joined on Class Page:', member.info);
+            setOnlineUserEmails(prev => new Set(prev).add(member.info.email));
+        });
+
+        channel.bind('pusher:member_removed', (member: any) => {
+            console.log('👤 User left on Class Page:', member.info);
+            setOnlineUserEmails(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(member.info.email);
+                return newSet;
+            });
+        });
+        
+        return () => {
+            console.log(`🔌 [CLIENT] Unsubscribing from channel: ${channelName} on Class Page`);
+            pusherClient.unsubscribe(channelName);
+        };
+    } catch (error) {
+        console.error("💥 Pusher subscription error on Class Page:", error);
+    }
+  }, [classe.chatroomId]);
+
 
   const handleSelectionChange = (studentId: string, isSelected: boolean) => {
     setSelectedStudents(prev => {
@@ -129,6 +170,7 @@ export default function ClassPageClient({ classe, teacher }: ClassPageClientProp
                 student={student} 
                 isSelected={selectedStudents.has(student.id)}
                 onSelectionChange={handleSelectionChange}
+                isConnected={!!student.email && onlineUserEmails.has(student.email)}
              />
           ))}
         </div>
