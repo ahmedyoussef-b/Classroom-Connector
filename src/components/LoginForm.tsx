@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -22,7 +22,6 @@ export function LoginForm({ initialEmail = '', emailPlaceholder = 'votre@email.c
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   useEffect(() => {
     setEmail(initialEmail);
@@ -50,10 +49,22 @@ export function LoginForm({ initialEmail = '', emailPlaceholder = 'votre@email.c
       } else {
         // This is a simplification. A real app would fetch the user object to get the ID.
         // For now, we rely on the fact that the login form on the home page provides the correct email.
-        const student = await fetch(`/api/user?email=${email}`).then(res => res.json());
-        if (student) {
-             router.push(`/student/${student.id}`);
-        } else {
+        try {
+            const res = await fetch(`/api/user?email=${email}`);
+            if (res.ok) {
+                const student = await res.json();
+                if (student && student.id) {
+                    router.push(`/student/${student.id}`);
+                } else {
+                     setError("Impossible de trouver l'élève associé à cet email.");
+                     router.push('/'); // Fallback
+                }
+            } else {
+                 setError("Erreur lors de la récupération des informations de l'utilisateur.");
+                 router.push('/'); // Fallback
+            }
+        } catch(e) {
+            setError("Une erreur réseau est survenue.");
             router.push('/'); // Fallback
         }
       }
@@ -99,7 +110,7 @@ export function LoginForm({ initialEmail = '', emailPlaceholder = 'votre@email.c
                 <AlertTitle>Erreur de connexion</AlertTitle>
                 <AlertDescription>
                     {error}
-                </AlertDescription>
+                </AlerDescription>
             </Alert>
           )}
 
