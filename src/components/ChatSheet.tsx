@@ -168,6 +168,7 @@ export function ChatSheet({ chatroomId, userId }: { chatroomId: string, userId: 
   }, [chatroomId, toast, scrollToBottom]);
   
   const handleNewMessage = useCallback((newMessage: MessageWithReactions) => {
+    console.log("📨 [CLIENT] Received 'new-message':", newMessage);
     setMessages(prev => {
         // If the message is from the current user and it was pending, update it.
         // Otherwise, add the new message.
@@ -188,6 +189,7 @@ export function ChatSheet({ chatroomId, userId }: { chatroomId: string, userId: 
   }, [scrollToBottom]);
 
   const handleReactionUpdate = useCallback(({ messageId, reactions }: { messageId: string, reactions: Reaction[] }) => {
+    console.log(`👍 [CLIENT] Received 'reaction-update' for message ${messageId}:`, reactions);
     setMessages(prev => 
         prev.map(msg => 
             msg.id === messageId ? { ...msg, reactions } : msg
@@ -200,17 +202,27 @@ export function ChatSheet({ chatroomId, userId }: { chatroomId: string, userId: 
 
     const channelName = `presence-chatroom-${chatroomId}`;
     try {
+        console.log(`🔌 [CLIENT] Subscribing to channel: ${channelName}`);
         const channel = pusherClient.subscribe(channelName);
+        
+        channel.bind('pusher:subscription_succeeded', () => {
+            console.log(`✅ [CLIENT] Successfully subscribed to ${channelName}`);
+        });
+        
+        channel.bind('pusher:subscription_error', (status: any) => {
+            console.error(`🚫 [CLIENT] Failed to subscribe to ${channelName}:`, status);
+        });
 
         channel.bind('new-message', handleNewMessage);
         channel.bind('reaction-update', handleReactionUpdate);
         
         return () => {
+            console.log(`🔌 [CLIENT] Unsubscribing from channel: ${channelName}`);
             channel.unbind_all();
             pusherClient.unsubscribe(channelName);
         };
     } catch (error) {
-        console.error("Pusher subscription error:", error);
+        console.error("💥 Pusher subscription error:", error);
         toast({
             variant: "destructive",
             title: "Erreur de connexion",
@@ -259,7 +271,8 @@ export function ChatSheet({ chatroomId, userId }: { chatroomId: string, userId: 
         reactions: [],
         status: 'pending'
     };
-
+    
+    console.log("⏳ [CLIENT] Optimistically adding message:", optimisticMessage);
     setMessages(prev => [...prev, optimisticMessage]);
     scrollToBottom();
     

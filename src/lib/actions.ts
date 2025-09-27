@@ -72,10 +72,12 @@ export async function sendMessage(formData: FormData): Promise<MessageWithReacti
             reactions: true
         }
     });
-
+    
+    const channelName = `presence-chatroom-${chatroomId}`;
+    console.log(`📡 [SERVER] Triggering 'new-message' on channel ${channelName}`);
     // We don't await this, let it run in the background
     pusherServer.trigger(
-        `presence-chatroom-${chatroomId}`,
+        channelName,
         'new-message',
         newMessage
     );
@@ -120,9 +122,11 @@ export async function toggleReaction(messageId: string, emoji: string) {
     });
 
     if (updatedMessage) {
+         const channelName = `presence-chatroom-${updatedMessage.chatroomId}`;
+         console.log(`📡 [SERVER] Triggering 'reaction-update' on channel ${channelName}`);
          // We don't await this, let it run in the background
          pusherServer.trigger(
-            `presence-chatroom-${updatedMessage.chatroomId}`,
+            channelName,
             'reaction-update',
             { 
                 messageId,

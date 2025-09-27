@@ -4,10 +4,12 @@ import { auth } from '@/lib/auth';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
+  console.log('🔒 Pusher auth request received');
   try {
     const session = await auth();
     
     if (!session?.user?.id) {
+      console.error('🚫 Pusher auth failed: Unauthorized (no session)');
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
@@ -18,6 +20,7 @@ export async function POST(req: NextRequest) {
     const channel = params.get('channel_name');
 
     if (!socketId || !channel) {
+       console.error('🚫 Pusher auth failed: Bad Request (missing socketId or channel)');
       return new NextResponse('Bad Request', { status: 400 });
     }
 
@@ -38,10 +41,11 @@ export async function POST(req: NextRequest) {
       channel,
       presenceData
     );
-
+    
+    console.log(`✅ Pusher auth successful for user ${session.user.id} on channel ${channel}`);
     return new NextResponse(JSON.stringify(authResponse));
   } catch (error) {
-    console.error('Pusher auth error:', error);
+    console.error('💥 Pusher auth error:', error);
     return new NextResponse('Internal Server Error', { status: 500 });
   }
 }
