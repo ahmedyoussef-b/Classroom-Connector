@@ -22,6 +22,12 @@ export type StudentWithStateAndCareer = Prisma.UserGetPayload<{
 
 export type Reaction = PrismaReaction;
 
-export type MessageWithReactions = Prisma.MessageGetPayload<{
+// Base message type from Prisma
+type BaseMessage = Prisma.MessageGetPayload<{
     include: { reactions: true }
-}>
+}>;
+
+// Add a status for optimistic UI
+export type MessageWithReactions = BaseMessage & {
+    status?: 'pending' | 'sent' | 'failed';
+};

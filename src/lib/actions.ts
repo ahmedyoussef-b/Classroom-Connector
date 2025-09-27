@@ -4,6 +4,7 @@ import prisma from './prisma';
 import { revalidatePath } from 'next/cache';
 import { auth } from './auth';
 import { pusherServer } from './pusher/server';
+import type { MessageWithReactions } from './types';
 
 
 async function getCurrentUser() {
@@ -48,7 +49,7 @@ export async function togglePunishment(studentId: string, classeId: string) {
   revalidatePath(`/student/${studentId}`);
 }
 
-export async function sendMessage(formData: FormData) {
+export async function sendMessage(formData: FormData): Promise<MessageWithReactions> {
     const user = await getCurrentUser();
     const messageContent = formData.get('message') as string;
     const chatroomId = formData.get('chatroomId') as string;
@@ -72,13 +73,16 @@ export async function sendMessage(formData: FormData) {
         }
     });
 
-    await pusherServer.trigger(
+    // We don't await this, let it run in the background
+    pusherServer.trigger(
         `presence-chatroom-${chatroomId}`,
         'new-message',
         newMessage
     );
-
-    revalidatePath(`/teacher/class/${dbUser.classeId}`);
+    
+    // No need to revalidate path as the client will be updated via Pusher
+    
+    return newMessage;
 }
 
 export async function toggleReaction(messageId: string, emoji: string) {
@@ -116,7 +120,8 @@ export async function toggleReaction(messageId: string, emoji: string) {
     });
 
     if (updatedMessage) {
-         await pusherServer.trigger(
+         // We don't await this, let it run in the background
+         pusherServer.trigger(
             `presence-chatroom-${updatedMessage.chatroomId}`,
             'reaction-update',
             { 
@@ -126,7 +131,7 @@ export async function toggleReaction(messageId: string, emoji: string) {
         );
     }
     
-    revalidatePath(`/teacher/class/${dbUser.classeId}`);
+    // No need to revalidate path as the client will be updated via Pusher
 }
 
 export async function getMessages(chatroomId: string) {
