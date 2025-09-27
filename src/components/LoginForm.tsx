@@ -110,7 +110,7 @@ export function LoginForm({ initialEmail = '', emailPlaceholder = 'votre@email.c
                 <AlertTitle>Erreur de connexion</AlertTitle>
                 <AlertDescription>
                     {error}
-                </AlerDescription>
+                </AlertDescription>
             </Alert>
           )}
 
