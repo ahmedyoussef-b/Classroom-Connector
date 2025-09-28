@@ -1,10 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    allowedDevOrigins: [
-      '3000-firebase-studio-1756840928840.cluster-cbeiita7rbe7iuwhvjs5zww2i4.cloudworkstations.dev',
-    ],
-  },
+  // Your Next.js configuration options go here.
+  // For example:
+  // images: {
+  //   domains: ['example.com'],
+  // },
 };
 
 export default nextConfig;
