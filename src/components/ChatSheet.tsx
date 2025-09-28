@@ -250,12 +250,10 @@ export function ChatSheet({ chatroomId, userId }: { chatroomId: string, userId: 
     });
   };
   
-  const sendMessageAction = async (formData: FormData) => {
+  const sendMessageAction = (formData: FormData) => {
     const messageContent = formData.get('message') as string;
     if (!messageContent.trim() || !session?.user) return;
-    
-    formRef.current?.reset();
-    
+
     const tempId = `temp-${Date.now()}`;
     const optimisticMessage: MessageWithReactions = {
         id: tempId,
@@ -268,20 +266,27 @@ export function ChatSheet({ chatroomId, userId }: { chatroomId: string, userId: 
         status: 'pending'
     };
     
-    setMessages(prev => [...prev, optimisticMessage]);
-    scrollToBottom();
-    
-    try {
-        await sendMessage(formData);
-    } catch (error) {
-        console.error("Failed to send message", error);
-        setMessages(prev => prev.map(msg => msg.id === tempId ? { ...msg, status: 'failed' } : msg));
-        toast({
-            variant: "destructive",
-            title: "Erreur d'envoi",
-            description: "Votre message n'a pas pu être envoyé."
+    startTransition(() => {
+        setMessages(prev => [...prev, optimisticMessage]);
+        scrollToBottom();
+        
+        sendMessage(formData).catch(error => {
+            console.error("Failed to send message", error);
+            setMessages(prev => prev.map(msg => msg.id === tempId ? { ...msg, status: 'failed' } : msg));
+            toast({
+                variant: "destructive",
+                title: "Erreur d'envoi",
+                description: "Votre message n'a pas pu être envoyé."
+            });
         });
-    }
+    });
+  };
+
+  const handleFormSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    sendMessageAction(formData);
+    formRef.current?.reset();
   };
 
   const resendMessageAction = async (msg: MessageWithReactions) => {
@@ -311,14 +316,14 @@ export function ChatSheet({ chatroomId, userId }: { chatroomId: string, userId: 
           <MessageCircle className="mr-2 h-4 w-4" /> Ouvrir le Chat
         </Button>
       </SheetTrigger>
-      <SheetContent className="flex flex-col w-full sm:max-w-lg">
+      <SheetContent className="flex flex-col h-full w-full sm:max-w-lg">
         <SheetHeader>
           <SheetTitle>Chat de la classe</SheetTitle>
           <SheetDescription>
             Discussion en temps réel avec vos élèves.
           </SheetDescription>
         </SheetHeader>
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 flex flex-col min-h-0">
           {chatroomId && <OnlineUsers chatroomId={chatroomId} />}
           <ScrollArea className="flex-1 pr-4 -mr-4 mt-4" ref={scrollAreaRef}>
             <div className="space-y-6 py-4">
@@ -335,7 +340,7 @@ export function ChatSheet({ chatroomId, userId }: { chatroomId: string, userId: 
           </ScrollArea>
           <form 
             ref={formRef}
-            action={sendMessageAction} 
+            onSubmit={handleFormSubmit}
             className="flex gap-2 border-t pt-4"
           >
             <input type="hidden" name="chatroomId" value={chatroomId} />
