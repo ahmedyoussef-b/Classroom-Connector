@@ -10,7 +10,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { Button } from './ui/button';
+import { Button } from '@/components/ui/button';
 import { MessageCircle, Send, SmilePlus, Clock, AlertCircle } from 'lucide-react';
 import { Input } from './ui/input';
 import { Avatar, AvatarFallback } from './ui/avatar';
