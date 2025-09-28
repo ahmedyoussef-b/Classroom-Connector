@@ -321,7 +321,7 @@ export function ChatSheet({ chatroomId, userId }: { chatroomId: string, userId: 
           <MessageCircle className="mr-2 h-4 w-4" /> Ouvrir le Chat
         </Button>
       </SheetTrigger>
-      <SheetContent className="flex flex-col h-full w-full sm:max-w-lg">
+      <SheetContent className="flex flex-col h-full w-full sm:max-w-lg" data-radix-sheet-content>
         <SheetHeader>
           <SheetTitle>Chat de la classe</SheetTitle>
           <SheetDescription>
