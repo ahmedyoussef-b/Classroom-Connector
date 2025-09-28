@@ -10,6 +10,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { Button } from '@/components/ui/button';
 import { MessageCircle, Send, SmilePlus, Clock, AlertCircle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -25,7 +26,6 @@ import { useToast } from '@/hooks/use-toast';
 import { useSession } from 'next-auth/react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { OnlineUsers } from './OnlineUsers';
-import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 function ReactionBubble({ emoji, count, hasReacted }: { emoji: string, count: number, hasReacted: boolean }) {
@@ -171,6 +171,11 @@ export function ChatSheet({ chatroomId, userId }: { chatroomId: string, userId: 
   }, [chatroomId, toast, scrollToBottom]);
   
  const handleNewMessage = useCallback((newMessage: MessageWithReactions) => {
+    console.log('[Pusher] ✉️ Nouveau message reçu:', {
+        de: newMessage.senderName,
+        message: newMessage.message,
+        id: newMessage.id
+    });
     setMessages(prev => {
         const pendingMessageIndex = prev.findIndex(msg => msg.status === 'pending' && msg.senderId === newMessage.senderId);
         
@@ -215,7 +220,7 @@ export function ChatSheet({ chatroomId, userId }: { chatroomId: string, userId: 
         const channel = pusherClient.subscribe(channelName);
         
         channel.bind('pusher:subscription_error', (status: any) => {
-            console.error(`Pusher subscription error to ${channelName}:`, status);
+            console.error(`[Pusher] 💥 Erreur de souscription à ${channelName}:`, status);
         });
 
         channel.bind('new-message', handleNewMessage);
@@ -226,7 +231,7 @@ export function ChatSheet({ chatroomId, userId }: { chatroomId: string, userId: 
             pusherClient.unsubscribe(channelName);
         };
     } catch (error) {
-        console.error("Pusher subscription error:", error);
+        console.error("[Pusher] 💥 Erreur de souscription:", error);
         toast({
             variant: "destructive",
             title: "Erreur de connexion",

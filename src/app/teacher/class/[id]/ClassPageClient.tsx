@@ -51,19 +51,22 @@ export default function ClassPageClient({ classe, teacher }: ClassPageClientProp
         const channel = pusherClient.subscribe(channelName);
         
         channel.bind('pusher:subscription_succeeded', (members: any) => {
-            console.log(`✅ [CLIENT] Successfully subscribed to ${channelName} on Class Page`);
+            console.log(`[Pusher] ✅ Souscription réussie à ${channelName}. Membres en ligne:`, members.count);
             const onlineEmails = new Set<string>();
-            members.each((member: any) => onlineEmails.add(member.info.email));
+            members.each((member: any) => {
+              console.log(`[Pusher] 👤 Utilisateur déjà en ligne: ${member.info.name} (${member.info.email})`);
+              onlineEmails.add(member.info.email)
+            });
             setOnlineUserEmails(onlineEmails);
         });
 
         channel.bind('pusher:member_added', (member: any) => {
-            console.log('👤 User joined on Class Page:', member.info);
+            console.log(`[Pusher] ➕ Utilisateur rejoint: ${member.info.name} (${member.id})`);
             setOnlineUserEmails(prev => new Set(prev).add(member.info.email));
         });
 
         channel.bind('pusher:member_removed', (member: any) => {
-            console.log('👤 User left on Class Page:', member.info);
+            console.log(`[Pusher] ➖ Utilisateur parti: ${member.info.name} (${member.id})`);
             setOnlineUserEmails(prev => {
                 const newSet = new Set(prev);
                 newSet.delete(member.info.email);
@@ -72,11 +75,11 @@ export default function ClassPageClient({ classe, teacher }: ClassPageClientProp
         });
         
         return () => {
-            console.log(`🔌 [CLIENT] Unsubscribing from channel: ${channelName} on Class Page`);
+            console.log(`[Pusher] 🔌 Déconnexion du canal: ${channelName}`);
             pusherClient.unsubscribe(channelName);
         };
     } catch (error) {
-        console.error("💥 Pusher subscription error on Class Page:", error);
+        console.error("[Pusher] 💥 Erreur de souscription:", error);
     }
   }, [classe.chatroomId]);
 
