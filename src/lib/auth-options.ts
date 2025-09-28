@@ -1,6 +1,7 @@
 // src/lib/auth-options.ts
 import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
+import GoogleProvider from 'next-auth/providers/google';
 import { PrismaAdapter } from '@next-auth/prisma-adapter';
 import prisma from './prisma';
 import { Role } from '@prisma/client';
@@ -9,6 +10,10 @@ import { Role } from '@prisma/client';
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   providers: [
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    }),
     CredentialsProvider({
       name: 'Credentials',
       credentials: {
@@ -53,7 +58,11 @@ export const authOptions: NextAuthOptions = {
     strategy: 'jwt',
   },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, account }) {
+      if (account) { // After a sign-in, account is available
+          // Persist the OAuth access_token and or the user id to the token right after sign-in
+          token.accessToken = account.access_token;
+      }
       if (user) {
         token.id = user.id;
         token.role = user.role;

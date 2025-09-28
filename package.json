@@ -64,8 +64,6 @@
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "prisma": "5.22.0",
-    "tailwindcss-animate": "^1.0.7",
-    "tsx": "^4.7.2",
-    "typescript": "^5"
+    "tailwindcss-animate": "^1.0.7"
   }
 }
