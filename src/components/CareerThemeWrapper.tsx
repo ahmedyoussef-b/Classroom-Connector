@@ -44,6 +44,13 @@ export function CareerThemeWrapper({ career, children }: CareerThemeWrapperProps
     
     useEffect(() => {
         const handleWheel = (event: WheelEvent) => {
+            // Check if the scroll event is happening inside the chat sheet (or any dialog)
+            const target = event.target as HTMLElement;
+            if (target.closest('[data-radix-dialog-content]')) {
+              // If it is, don't do anything and let the default scroll happen
+              return;
+            }
+
             event.preventDefault();
             
             const zoomSpeed = 0.1;
