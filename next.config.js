@@ -1,4 +1,10 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {};
+const nextConfig = {
+  // Your Next.js configuration options go here.
+  // For example:
+  // images: {
+  //   domains: ['example.com'],
+  // },
+};
 
-module.exports = nextConfig;
+export default nextConfig;

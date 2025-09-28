@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from 'react';
-import { personalizedLearningAmbitionDisplay } from '@/ai/flows/personalized-learning-ambition-display';
 import { Button } from './ui/button';
 import { Loader2, Sparkles } from 'lucide-react';
 import type { User } from '@prisma/client';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import { Card, CardContent } from './ui/card';
+import { generatePersonalizedContent } from '@/lib/ai-actions';
 
 interface PersonalizedContentProps {
   student: User;
@@ -78,7 +78,7 @@ export function PersonalizedContent({ student }: PersonalizedContentProps) {
     setError('');
     setContent('');
     try {
-      const result = await personalizedLearningAmbitionDisplay({
+      const result = await generatePersonalizedContent({
         studentId: student.id,
         name: student.name ?? 'Student',
         careerAmbitions: student.ambition ?? 'Not specified',
