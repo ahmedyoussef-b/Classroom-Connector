@@ -5,8 +5,10 @@ import prisma from './prisma';
 import { Role } from '@prisma/client';
 import { JWT } from 'next-auth/jwt';
 import { Session } from 'next-auth';
+import { PrismaAdapter } from '@next-auth/prisma-adapter';
 
 export const authOptions: NextAuthOptions = {
+  adapter: PrismaAdapter(prisma),
   providers: [
     CredentialsProvider({
       name: 'Credentials',
@@ -15,7 +17,7 @@ export const authOptions: NextAuthOptions = {
         password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
-        if (!credentials?.email || typeof credentials.email !== 'string' || !credentials.password) {
+        if (!credentials?.email || !credentials.password) {
           return null;
         }
 
