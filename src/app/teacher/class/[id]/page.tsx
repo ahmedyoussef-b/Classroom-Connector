@@ -2,7 +2,7 @@
 import prisma from '@/lib/prisma';
 import { notFound, redirect } from 'next/navigation';
 import ClassPageClient from './ClassPageClient';
-import { getAuthSession } from '@/lib/auth';
+import { getAuthSession } from '@/lib/session';
 
 export default async function ClassPage({ params }: { params: { id: string } }) {
   const classeId = params.id;

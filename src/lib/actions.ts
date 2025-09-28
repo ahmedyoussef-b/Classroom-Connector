@@ -2,7 +2,7 @@
 
 import prisma from './prisma';
 import { revalidatePath } from 'next/cache';
-import { getAuthSession } from './auth';
+import { getAuthSession } from './session';
 import { pusherServer } from './pusher/server';
 import type { MessageWithReactions } from './types';
 

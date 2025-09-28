@@ -2,7 +2,7 @@
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { getAuthSession } from '@/lib/auth';
+import { getAuthSession } from '@/lib/session';
 import { ArrowRight, BookOpen, UserCheck } from 'lucide-react';
 import Link from 'next/link';
 

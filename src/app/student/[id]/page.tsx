@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { BackButton } from '@/components/BackButton';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { TeacherCareerSelector } from '@/components/TeacherCareerSelector';
-import { getAuthSession } from '@/lib/auth';
+import { getAuthSession } from '@/lib/session';
 import { ChatSheet } from '@/components/ChatSheet';
 
 

@@ -7,7 +7,7 @@ import Link from 'next/link';
 import prisma from '@/lib/prisma';
 import { AddClassForm } from '@/components/AddClassForm';
 import { User, Classe, Chatroom } from '@prisma/client';
-import { getAuthSession } from '@/lib/auth';
+import { getAuthSession } from '@/lib/session';
 import { redirect } from 'next/navigation';
 
 // Define a more accurate type for the teacher data

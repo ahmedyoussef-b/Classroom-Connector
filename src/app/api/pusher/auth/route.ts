@@ -1,6 +1,6 @@
 // app/api/pusher/auth/route.ts
 import { pusherServer } from '@/lib/pusher/server';
-import { getAuthSession } from '@/lib/auth';
+import { getAuthSession } from '@/lib/session';
 import { NextRequest } from 'next/server';
 
 export async function POST(request: NextRequest) {

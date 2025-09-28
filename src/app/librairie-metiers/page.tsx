@@ -6,7 +6,7 @@ import Link from 'next/link';
 import prisma from '@/lib/prisma';
 import * as Icons from 'lucide-react';
 import { BackButton } from '@/components/BackButton';
-import { getAuthSession } from '@/lib/auth';
+import { getAuthSession } from '@/lib/session';
 
 type IconName = keyof typeof Icons;
 

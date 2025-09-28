@@ -1,5 +1,4 @@
-// src/lib/auth.ts
-import NextAuth, { getServerSession } from 'next-auth';
+// src/lib/auth-options.ts
 import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import prisma from './prisma';
@@ -62,7 +61,3 @@ export const authOptions: NextAuthOptions = {
     signIn: '/login',
   },
 };
-
-export const handler = NextAuth(authOptions);
-
-export const getAuthSession = () => getServerSession(authOptions);
